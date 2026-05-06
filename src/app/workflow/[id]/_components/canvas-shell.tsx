@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useConsoleLog } from "@/hooks/use-console-log";
 import { useWorkflowStore } from "@/stores/workflow-store";
@@ -8,8 +8,8 @@ import type { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 import { AppSidebar } from "@/components/app-sidebar";
 import { FlowCanvas } from "./flow-canvas";
 import { ToolbarControls } from "./toolbar-controls";
-import { NodePickerToolbar } from "./node-picker-toolbar";
 import { HistoryPanel } from "./history-panel";
+import { CanvasToolbar } from "./canvas-toolbar";
 
 interface CanvasShellProps {
   workflowId: string;
@@ -26,6 +26,7 @@ export function CanvasShell({
 }: CanvasShellProps) {
   useConsoleLog();
   const hydrate = useWorkflowStore((s) => s.hydrate);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     hydrate(initialNodes, initialEdges, workflowId);
@@ -33,17 +34,30 @@ export function CanvasShell({
 
   return (
     <ReactFlowProvider>
-      <div className="min-h-screen bg-[#f6f4ef]">
+      <div className="min-h-screen bg-[#ffffff]">
         <AppSidebar />
-        <div className="pl-[88px] sm:pl-[290px]">
-          <div className="flex h-screen flex-col gap-4 p-3 sm:p-5">
-            <ToolbarControls workflowName={workflowName} workflowId={workflowId} />
-            <div className="flex flex-1 overflow-hidden rounded-[28px] border border-[#d8d5cb] bg-[#0a0a0f] shadow-[0_30px_60px_rgba(15,23,42,0.18)]">
-              <div className="relative flex-1">
-                <FlowCanvas />
-                <NodePickerToolbar />
-              </div>
-              <HistoryPanel workflowId={workflowId} />
+        <div className="pl-[88px] sm:pl-[300px]">
+          <div className="flex h-screen overflow-hidden bg-white">
+            <div className="relative min-w-0 flex-1">
+              <ToolbarControls
+                workflowName={workflowName}
+                workflowId={workflowId}
+                historyOpen={historyOpen}
+                onToggleHistory={() => setHistoryOpen((open) => !open)}
+              />
+              <FlowCanvas />
+              <CanvasToolbar />
+            </div>
+            <div
+              className={`relative shrink-0 overflow-hidden border-l border-[#e7e8ec] bg-white transition-[width] duration-300 ${
+                historyOpen ? "w-[300px]" : "w-0 border-l-0"
+              }`}
+            >
+              <HistoryPanel
+                workflowId={workflowId}
+                isOpen={historyOpen}
+                onClose={() => setHistoryOpen(false)}
+              />
             </div>
           </div>
         </div>

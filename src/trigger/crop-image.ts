@@ -4,7 +4,6 @@ import { promisify } from "util";
 import { writeFile, readFile, mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import ffmpegPath from "ffmpeg-static";
 
 const execFileAsync = promisify(execFile);
 
@@ -31,16 +30,24 @@ export const cropImageTask = task({
     const outputPath = join(tempDir, "output.png");
 
     try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
+      let buffer: Buffer;
+      if (imageUrl.startsWith("data:")) {
+        const matches = imageUrl.match(/^data:.+?;base64,(.+)$/);
+        console.log("imageurl", imageUrl);
+        if (!matches) throw new Error("Invalid base64 data URL");
+        buffer = Buffer.from(matches[1], "base64");
+      } else {
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image (${response.status}). The URL may have expired — try re-uploading the image.`);
+        }
+        buffer = Buffer.from(await response.arrayBuffer());
       }
-      const buffer = Buffer.from(await response.arrayBuffer());
       await writeFile(inputPath, buffer);
 
       const cropFilter = `crop=iw*${width / 100}:ih*${height / 100}:iw*${xPosition / 100}:ih*${yPosition / 100}`;
 
-      await execFileAsync(ffmpegPath!, [
+      await execFileAsync("ffmpeg", [
         "-i", inputPath,
         "-vf", cropFilter,
         "-y",

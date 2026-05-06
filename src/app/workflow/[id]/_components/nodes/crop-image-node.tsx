@@ -2,13 +2,23 @@
 
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Crop, Trash2, Play } from "lucide-react";
+import { Crop, Upload, RotateCcw, Info, Plus } from "lucide-react";
 import { useWorkflowStore } from "@/stores/workflow-store";
 import { useExecutionStore } from "@/stores/execution-store";
 import { useWorkflowExecute } from "@/hooks/use-workflow-execute";
 import type { CropImageData } from "@/types/workflow";
+import {
+  FieldLabel,
+  NodeShell,
+  StatusPill,
+} from "./node-shell";
 
-function SliderField({
+const INPUT_HANDLE =
+  "!h-[14px] !w-[14px] !-left-[7px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1px_rgba(59,130,246,0.25)]";
+const OUTPUT_HANDLE =
+  "!h-[14px] !w-[14px] !-right-[7px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1px_rgba(59,130,246,0.25)]";
+
+function SliderRow({
   label,
   value,
   defaultValue,
@@ -17,24 +27,54 @@ function SliderField({
   label: string;
   value: number | undefined;
   defaultValue: number;
-  onChange: (value: number) => void;
+  onChange: (v: number) => void;
 }) {
-  const currentValue = value ?? defaultValue;
+  const current = value ?? defaultValue;
+  const isDefault = current === defaultValue;
 
   return (
-    <div>
-      <div className="mb-1 flex items-center justify-between">
-        <label className="text-xs text-muted">{label}</label>
-        <span className="text-[10px] text-white">{currentValue}%</span>
-      </div>
+    <div className="flex items-center gap-2 py-1">
+      <span className="w-[82px] shrink-0 text-[12px] font-medium text-[#475467]">
+        {label}
+      </span>
+
+      <button
+        className="nodrag flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#98a2b3] transition-colors hover:bg-[#f2f4f7] hover:text-[#475467]"
+        title={`Info: default ${defaultValue}`}
+      >
+        <Info className="h-3 w-3" />
+      </button>
+
       <input
         type="range"
         min={0}
         max={100}
-        value={currentValue}
+        value={current}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-green-400"
+        className="nodrag h-[6px] min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-[#e4e7ec] accent-[#3b82f6] [&::-webkit-slider-thumb]:h-[14px] [&::-webkit-slider-thumb]:w-[14px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#3b82f6] [&::-webkit-slider-thumb]:shadow-[0_1px_4px_rgba(59,130,246,0.4)]"
       />
+
+      <button
+        onClick={() => onChange(defaultValue)}
+        disabled={isDefault}
+        className="nodrag flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#98a2b3] transition-colors hover:bg-[#f2f4f7] hover:text-[#475467] disabled:cursor-default disabled:opacity-30"
+        title={`Reset to ${defaultValue}`}
+      >
+        <RotateCcw className="h-3 w-3" />
+      </button>
+
+      <div className="flex h-8 w-[52px] shrink-0 items-center justify-center rounded-[10px] border border-[#e4e7ec] bg-[#f8fafc] text-[12px] font-medium text-[#101828]">
+        {current}
+      </div>
+
+      <button
+        onClick={() => onChange(Math.min(100, current + 1))}
+        disabled={current >= 100}
+        className="nodrag flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#98a2b3] transition-colors hover:bg-[#f2f4f7] hover:text-[#475467] disabled:cursor-default disabled:opacity-30"
+        title="Increment"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
     </div>
   );
 }
@@ -52,127 +92,101 @@ function CropImageNodeComponent({ id, data }: NodeProps) {
     (e) => e.target === id && e.targetHandle?.includes("inputImage")
   );
 
-  const statusClass =
-    nodeStatus === "RUNNING"
-      ? "node-executing"
-      : nodeStatus === "PENDING"
-        ? "node-pending"
-        : nodeStatus === "COMPLETED"
-          ? "node-completed"
-          : nodeStatus === "FAILED"
-            ? "node-failed"
-            : "";
-
   return (
-    <div
-      className={`bg-[#1a1a2e] border border-[#2a2a4a] rounded-xl min-w-[260px] shadow-lg ${statusClass}`}
+    <NodeShell
+      title="Crop Image"
+      status={nodeStatus}
+      onRun={() => execute("SINGLE_NODE", [id])}
+      onDelete={() => removeNode(id)}
+      isExecuting={isExecuting}
+      widthClass="min-w-[340px]"
     >
-      <Handle
-        type="target"
-        position={Position.Left}
-        id={`${id}-inputImage-image-in`}
-        className="!w-3 !h-3 !bg-purple-400 !border-2 !border-[#1a1a2e]"
-        style={{ top: "50px" }}
-      />
-
-      <div className="px-4 py-3 border-b border-[#2a2a4a] flex items-center gap-2">
-        <div className="w-6 h-6 rounded bg-green-500/20 flex items-center justify-center">
-          <Crop className="w-3 h-3 text-green-400" />
+      {/* Input Image */}
+      <div className="relative flex items-center gap-3 rounded-[14px] border border-[#e4e7ec] bg-[#f8fafc] px-3 py-2.5">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id={`${id}-inputImage-image-in`}
+          className={INPUT_HANDLE}
+        />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#fff4e5]">
+          <Crop className="h-4 w-4 text-[#ff9f0a]" />
         </div>
-        <span className="text-sm font-medium text-white">Crop Image</span>
-        <div className="ml-auto flex items-center gap-1">
-          {nodeStatus === "COMPLETED" && (
-            <span className="text-xs text-success">Done</span>
-          )}
-          {nodeStatus === "FAILED" && (
-            <span className="text-xs text-danger">Failed</span>
-          )}
-          {nodeStatus === "PENDING" && (
-            <span className="text-xs text-muted animate-pulse">Pending...</span>
-          )}
-          {nodeStatus === "RUNNING" && (
-            <span className="text-xs text-primary animate-pulse">
-              Running...
-            </span>
-          )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              execute("SINGLE_NODE", [id]);
-            }}
-            disabled={isExecuting}
-            className="p-1 rounded hover:bg-[#2a2a4a] transition-colors disabled:opacity-30"
-            title="Run this node"
-          >
-            <Play className="w-3 h-3 text-muted hover:text-success" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              removeNode(id);
-            }}
-            className="p-1 rounded hover:bg-[#2a2a4a] transition-colors"
-            title="Delete node"
-          >
-            <Trash2 className="w-3 h-3 text-muted hover:text-danger" />
-          </button>
+        <div className="min-w-0 flex-1">
+          <span className="text-[12px] font-medium text-[#344054]">
+            Input Image<span className="text-[#ef4444]">*</span>
+          </span>
         </div>
-      </div>
-
-      <div className="p-3 space-y-2">
-        {hasImageConnection && (
-          <div className="flex items-center gap-2 px-2 py-1.5 bg-[#0a0a0f] rounded border border-[#2a2a4a]">
-            <span className="w-2 h-2 rounded-full bg-purple-400" />
-            <span className="text-xs text-muted">Image connected from upstream</span>
+        {hasImageConnection ? (
+          <StatusPill tone="connected">Connected</StatusPill>
+        ) : (
+          <div className="flex items-center gap-1.5 text-[11px] text-[#98a2b3]">
+            <Upload className="h-3 w-3" />
+            Upload image
           </div>
         )}
+      </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <SliderField
-            label="X Position"
-            value={nodeData.xPosition}
-            defaultValue={0}
-            onChange={(value) => updateNodeData(id, { xPosition: value })}
-          />
-          <SliderField
-            label="Y Position"
-            value={nodeData.yPosition}
-            defaultValue={0}
-            onChange={(value) => updateNodeData(id, { yPosition: value })}
-          />
-          <SliderField
-            label="Width"
-            value={nodeData.width}
-            defaultValue={100}
-            onChange={(value) => updateNodeData(id, { width: value })}
-          />
-          <SliderField
-            label="Height"
-            value={nodeData.height}
-            defaultValue={100}
-            onChange={(value) => updateNodeData(id, { height: value })}
-          />
+      {/* Sliders */}
+      <div className="space-y-1">
+        <SliderRow
+          label="X Position (%)"
+          value={nodeData.xPosition}
+          defaultValue={0}
+          onChange={(v) => updateNodeData(id, { xPosition: v })}
+        />
+        <SliderRow
+          label="Y Position (%)"
+          value={nodeData.yPosition}
+          defaultValue={0}
+          onChange={(v) => updateNodeData(id, { yPosition: v })}
+        />
+        <SliderRow
+          label="Width (%)"
+          value={nodeData.width}
+          defaultValue={100}
+          onChange={(v) => updateNodeData(id, { width: v })}
+        />
+        <SliderRow
+          label="Height (%)"
+          value={nodeData.height}
+          defaultValue={100}
+          onChange={(v) => updateNodeData(id, { height: v })}
+        />
+      </div>
+
+      {/* Output Image */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <FieldLabel>Output Image</FieldLabel>
         </div>
-
-        {typeof nodeOutput === "string" && (
-          <div className="mt-2 p-2 bg-[#0a0a0f] rounded border border-[#2a2a4a]">
-            <p className="text-xs text-muted mb-1">Output:</p>
+        {typeof nodeOutput === "string" ? (
+          <div className="relative rounded-[12px] border border-[#e4e7ec] bg-[#f8fafc] p-2">
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={`${id}-outputImage-image-out`}
+              className={OUTPUT_HANDLE}
+            />
             <img
               src={nodeOutput}
               alt="Cropped"
-              className="w-full h-20 object-cover rounded"
+              className="h-28 w-full rounded-[10px] object-cover"
             />
+          </div>
+        ) : (
+          <div className="relative rounded-[12px] border border-[#e4e7ec] bg-[#f8fafc] py-6 text-center text-[12px] text-[#98a2b3]">
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={`${id}-outputImage-image-out`}
+              className={OUTPUT_HANDLE}
+            />
+            No output yet
           </div>
         )}
       </div>
-
-      <Handle
-        type="source"
-        position={Position.Right}
-        id={`${id}-outputImage-image-out`}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-[#1a1a2e]"
-      />
-    </div>
+    </NodeShell>
   );
 }
 

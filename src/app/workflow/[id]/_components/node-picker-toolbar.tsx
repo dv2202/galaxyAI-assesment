@@ -13,8 +13,8 @@ const NODE_OPTIONS = [
     icon: Crop,
     category: "Image",
     description: "Crop an image by percentage coordinates",
-    color: "text-green-400",
-    bgColor: "bg-green-500/20",
+    color: "text-green-500",
+    bgColor: "bg-green-500/15",
   },
   {
     type: NODE_TYPES.GEMINI,
@@ -22,8 +22,8 @@ const NODE_OPTIONS = [
     icon: Sparkles,
     category: "LLM",
     description: "Generate text with Google Gemini",
-    color: "text-violet-400",
-    bgColor: "bg-violet-500/20",
+    color: "text-violet-500",
+    bgColor: "bg-violet-500/15",
   },
 ];
 
@@ -79,24 +79,24 @@ export function NodePickerToolbar() {
   }
 
   return (
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+    <div className="absolute bottom-6 left-1/2 z-10 ml-[380px] -translate-x-1/2">
       {isOpen && (
-        <div className="absolute bottom-14 left-1/2 -translate-x-1/2 w-72 bg-[#1a1a2e] border border-[#2a2a4a] rounded-xl shadow-2xl overflow-hidden">
-          <div className="p-3 border-b border-[#2a2a4a]">
+        <div className="absolute bottom-16 right-0 w-80 overflow-hidden rounded-[22px] border border-[#e5e7eb] bg-white shadow-[0_24px_60px_rgba(17,24,39,0.12)]">
+          <div className="border-b border-[#eef0f3] p-3">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
               <input
                 ref={inputRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search nodes..."
-                className="w-full bg-[#0a0a0f] border border-[#2a2a4a] rounded-lg pl-8 pr-3 py-2 text-xs text-white placeholder:text-muted"
+                className="nodrag w-full rounded-xl border border-[#e5e7eb] bg-[#f8fafc] py-2 pl-9 pr-3 text-xs text-[#2d2a24] placeholder:text-[#9ca3af]"
               />
             </div>
           </div>
-          <div className="p-2 max-h-60 overflow-y-auto">
+          <div className="max-h-60 overflow-y-auto p-2">
             {filtered.length === 0 ? (
-              <p className="text-xs text-muted text-center py-4">
+              <p className="py-4 text-center text-xs text-[#9e9689]">
                 No nodes found
               </p>
             ) : (
@@ -104,18 +104,18 @@ export function NodePickerToolbar() {
                 <button
                   key={opt.type}
                   onClick={() => handleAddNode(opt.type)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#2a2a4a] transition-colors text-left"
+                  className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-[#f7f9fc]"
                 >
                   <div
-                    className={`w-8 h-8 rounded-lg ${opt.bgColor} flex items-center justify-center shrink-0`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${opt.bgColor}`}
                   >
-                    <opt.icon className={`w-4 h-4 ${opt.color}`} />
+                    <opt.icon className={`h-4 w-4 ${opt.color}`} />
                   </div>
                   <div>
-                    <p className="text-sm text-white font-medium">
+                    <p className="text-sm font-medium text-[#201d18]">
                       {opt.label}
                     </p>
-                    <p className="text-xs text-muted">{opt.description}</p>
+                    <p className="text-xs text-[#8f877a]">{opt.description}</p>
                   </div>
                 </button>
               ))
@@ -126,16 +126,16 @@ export function NodePickerToolbar() {
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all ${
+        className={`flex h-16 w-16 items-center justify-center rounded-[18px] border shadow-[0_18px_32px_rgba(17,24,39,0.12)] transition-all ${
           isOpen
-            ? "bg-[#2a2a4a] border border-[#3a3a5a] rotate-45"
-            : "bg-primary hover:bg-primary-hover border border-primary"
+            ? "rotate-45 border-[#dddffd] bg-[#f1f2ff]"
+            : "border-[#e5e7eb] bg-white hover:bg-[#fafafa]"
         }`}
       >
         {isOpen ? (
-          <X className="w-4 h-4 text-white" />
+          <X className="h-5 w-5 text-[#6e56cf]" />
         ) : (
-          <Plus className="w-4 h-4 text-white" />
+          <Plus className="h-5 w-5 text-[#6b7280]" />
         )}
       </button>
     </div>

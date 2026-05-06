@@ -3,17 +3,31 @@
 import { memo, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
-  Sparkles,
   ChevronDown,
   ChevronRight,
-  Image,
-  Trash2,
-  Play,
+  ImageIcon,
+  Plus,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { useWorkflowStore } from "@/stores/workflow-store";
 import { useExecutionStore } from "@/stores/execution-store";
 import { useWorkflowExecute } from "@/hooks/use-workflow-execute";
 import type { GeminiData } from "@/types/workflow";
+import {
+  FieldBox,
+  FieldLabel,
+  imageInputHandleClass,
+  inputHandleClass,
+  MiniInfoDot,
+  NodeShell,
+  outputHandleClass,
+  SectionDivider,
+  SectionTitle,
+  StatusPill,
+  TextareaInput,
+  TextInput,
+} from "./node-shell";
 
 const MODEL_OPTIONS = [
   { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
@@ -32,7 +46,10 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
 
   const edges = useWorkflowStore((s) => s.edges);
   const hasPromptConnection = edges.some(
-    (e) => e.target === id && e.targetHandle?.includes("prompt") && !e.targetHandle?.includes("system")
+    (e) =>
+      e.target === id &&
+      e.targetHandle?.includes("prompt") &&
+      !e.targetHandle?.includes("system")
   );
   const hasSystemPromptConnection = edges.some(
     (e) => e.target === id && e.targetHandle?.includes("systemPrompt")
@@ -41,211 +58,185 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
   const connectedHandles = new Set(
     edges.filter((e) => e.target === id).map((e) => e.targetHandle || "")
   );
-
-  const statusClass =
-    nodeStatus === "RUNNING"
-      ? "node-executing"
-      : nodeStatus === "PENDING"
-        ? "node-pending"
-        : nodeStatus === "COMPLETED"
-          ? "node-completed"
-          : nodeStatus === "FAILED"
-            ? "node-failed"
-            : "";
+  const selectedModel = nodeData.model || "gemini-2.5-pro";
+  const title =
+    MODEL_OPTIONS.find((option) => option.value === selectedModel)?.label ||
+    "Gemini";
 
   return (
-    <div
-      className={`bg-[#1a1a2e] border border-[#2a2a4a] rounded-xl min-w-[300px] max-w-[340px] shadow-lg ${statusClass}`}
+    <NodeShell
+      title={title}
+      status={nodeStatus}
+      onRun={() => execute("SINGLE_NODE", [id])}
+      onDelete={() => removeNode(id)}
+      isExecuting={isExecuting}
+      widthClass="min-w-[380px] max-w-[420px]"
+      actions={
+        <div className="flex h-8 items-center rounded-[10px] border border-[#e7eaf0] bg-[#f8fafc] px-2">
+          <Sparkles className="mr-1 h-3.5 w-3.5 text-[#7c3aed]" />
+          <select
+            value={selectedModel}
+            onChange={(e) => updateNodeData(id, { model: e.target.value })}
+            className="nodrag bg-transparent text-[12px] font-medium text-[#344054] outline-none"
+          >
+            {MODEL_OPTIONS.map((m) => (
+              <option key={m.value} value={m.value} className="bg-white">
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      }
     >
-      {/* Header with model selector */}
-      <div className="px-4 py-3 border-b border-[#2a2a4a] flex items-center gap-2">
-        <div className="w-6 h-6 rounded bg-violet-500/20 flex items-center justify-center shrink-0">
-          <Sparkles className="w-3 h-3 text-violet-400" />
-        </div>
-        <select
-          value={nodeData.model || "gemini-2.5-pro"}
-          onChange={(e) => updateNodeData(id, { model: e.target.value })}
-          className="bg-transparent text-sm font-medium text-white outline-none cursor-pointer flex-1 min-w-0"
-        >
-          {MODEL_OPTIONS.map((m) => (
-            <option key={m.value} value={m.value} className="bg-[#1a1a2e]">
-              {m.label}
-            </option>
-          ))}
-        </select>
-        <div className="ml-auto flex items-center gap-1 shrink-0">
-          {nodeStatus === "COMPLETED" && (
-            <span className="text-xs text-success">Done</span>
-          )}
-          {nodeStatus === "FAILED" && (
-            <span className="text-xs text-danger">Failed</span>
-          )}
-          {nodeStatus === "PENDING" && (
-            <span className="text-xs text-muted animate-pulse">Pending...</span>
-          )}
-          {nodeStatus === "RUNNING" && (
-            <span className="text-xs text-primary animate-pulse">
-              Running...
-            </span>
-          )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              execute("SINGLE_NODE", [id]);
-            }}
-            disabled={isExecuting}
-            className="p-1 rounded hover:bg-[#2a2a4a] transition-colors disabled:opacity-30"
-            title="Run this node"
-          >
-            <Play className="w-3 h-3 text-muted hover:text-success" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              removeNode(id);
-            }}
-            className="p-1 rounded hover:bg-[#2a2a4a] transition-colors"
-            title="Delete node"
-          >
-            <Trash2 className="w-3 h-3 text-muted hover:text-danger" />
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="p-3 space-y-3">
-        {/* Prompt */}
+      <div className="space-y-4">
         <div className="relative">
           <Handle
             type="target"
             position={Position.Left}
             id={`${id}-prompt-text-in`}
-            className="!w-3 !h-3 !bg-blue-400 !border-2 !border-[#1a1a2e]"
+            className={inputHandleClass}
           />
-          <label className="text-xs text-muted block mb-1">
-            Prompt <span className="text-red-400">*</span>
-          </label>
-          <textarea
+          <FieldLabel required info={<MiniInfoDot />}>
+            Prompt
+          </FieldLabel>
+          <TextareaInput
             value={nodeData.prompt || ""}
-            onChange={(e) => updateNodeData(id, { prompt: e.target.value })}
+            onChange={(value) => updateNodeData(id, { prompt: value })}
             disabled={hasPromptConnection}
             placeholder={
-              hasPromptConnection ? "Connected from upstream" : "Enter prompt..."
+              hasPromptConnection
+                ? "Connected from upstream"
+                : "Describe the content you want generated..."
             }
-            className={`w-full bg-[#0a0a0f] border border-[#2a2a4a] rounded px-2 py-1.5 text-xs text-white resize-none h-14 ${
-              hasPromptConnection ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className="h-22"
           />
+          {hasPromptConnection ? (
+            <div className="mt-2">
+              <StatusPill tone="connected">Connected</StatusPill>
+            </div>
+          ) : null}
         </div>
 
-        {/* System Prompt */}
         <div className="relative">
           <Handle
             type="target"
             position={Position.Left}
             id={`${id}-systemPrompt-text-in`}
-            className="!w-3 !h-3 !bg-blue-400 !border-2 !border-[#1a1a2e]"
+            className={inputHandleClass}
           />
-          <label className="text-xs text-muted block mb-1">System Prompt</label>
-          <textarea
+          <FieldLabel>System Prompt</FieldLabel>
+          <TextareaInput
             value={nodeData.systemPrompt || ""}
-            onChange={(e) =>
-              updateNodeData(id, { systemPrompt: e.target.value })
-            }
+            onChange={(value) => updateNodeData(id, { systemPrompt: value })}
             disabled={hasSystemPromptConnection}
             placeholder={
               hasSystemPromptConnection
                 ? "Connected from upstream"
                 : "Enter system prompt..."
             }
-            className={`w-full bg-[#0a0a0f] border border-[#2a2a4a] rounded px-2 py-1.5 text-xs text-white resize-none h-14 ${
-              hasSystemPromptConnection ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className="h-20"
           />
         </div>
 
-        {/* Image (Vision) */}
-        <div className="relative flex items-center gap-2 py-1">
-          <Handle
-            type="target"
-            position={Position.Left}
-            id={`${id}-image-image-in`}
-            className="!w-3 !h-3 !bg-purple-400 !border-2 !border-[#1a1a2e]"
-          />
-          <Image className="w-3 h-3 text-purple-400" />
-          <span className="text-xs text-muted">Image (Vision)</span>
-          {connectedHandles.has(`${id}-image-image-in`) && (
-            <span className="w-2 h-2 rounded-full bg-purple-400 ml-auto" />
-          )}
+        <div className="space-y-2">
+          {Array.from({ length: nodeData.imageInputCount ?? 1 }).map((_, i) => (
+            <div key={i} className="group/img relative flex items-center gap-2">
+              <Handle
+                type="target"
+                position={Position.Left}
+                id={`${id}-image_${i}-image-in`}
+                className={imageInputHandleClass}
+              />
+              <ImageIcon className="h-3.5 w-3.5 text-[#ec4899]" />
+              <span className="text-[12px] text-[#475467]">
+                Image{(nodeData.imageInputCount ?? 1) > 1 ? ` ${i + 1}` : ""} (Vision)
+              </span>
+              {connectedHandles.has(`${id}-image_${i}-image-in`) && (
+                <StatusPill tone="connected">Connected</StatusPill>
+              )}
+              {(nodeData.imageInputCount ?? 1) > 1 && (
+                <button
+                  onClick={() =>
+                    updateNodeData(id, {
+                      imageInputCount: (nodeData.imageInputCount ?? 1) - 1,
+                    })
+                  }
+                  className="ml-auto rounded p-0.5 opacity-0 transition-opacity group-hover/img:opacity-100 hover:bg-[#f5f7fa]"
+                >
+                  <X className="h-3.5 w-3.5 text-[#98a2b3] hover:text-[#ef4444]" />
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={() =>
+              updateNodeData(id, {
+                imageInputCount: (nodeData.imageInputCount ?? 1) + 1,
+              })
+            }
+            className="flex items-center gap-1 rounded-[10px] border border-dashed border-[#d0d5dd] px-3 py-2 text-[12px] text-[#667085] transition-colors hover:border-[#bfc7d4] hover:text-[#101828]"
+          >
+            <Plus className="h-3 w-3" />
+            Add image input
+          </button>
         </div>
 
-        {/* Settings (collapsed) */}
+        <SectionDivider />
+
         <button
           onClick={() => setSettingsOpen(!settingsOpen)}
-          className="flex items-center gap-1 text-xs text-muted hover:text-white transition-colors"
+          className="flex items-center gap-1 text-[12px] text-[#667085] transition-colors hover:text-[#101828]"
         >
           {settingsOpen ? (
-            <ChevronDown className="w-3 h-3" />
+            <ChevronDown className="h-3.5 w-3.5" />
           ) : (
-            <ChevronRight className="w-3 h-3" />
+            <ChevronRight className="h-3.5 w-3.5" />
           )}
           Settings
         </button>
         {settingsOpen && (
-          <div className="space-y-2 pl-2">
+          <div className="space-y-3">
             <div>
-              <label className="text-xs text-muted block mb-1">
-                Temperature
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={2}
-                step={0.1}
-                value={nodeData.temperature ?? 1}
-                onChange={(e) =>
-                  updateNodeData(id, { temperature: Number(e.target.value) })
+              <FieldLabel>Temperature</FieldLabel>
+              <TextInput
+                value={String(nodeData.temperature ?? 1)}
+                onChange={(value) =>
+                  updateNodeData(id, { temperature: Number(value) || 0 })
                 }
-                className="w-full bg-[#0a0a0f] border border-[#2a2a4a] rounded px-2 py-1 text-xs text-white"
               />
             </div>
             <div>
-              <label className="text-xs text-muted block mb-1">
-                Max Tokens
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={65536}
-                value={nodeData.maxTokens ?? 8192}
-                onChange={(e) =>
-                  updateNodeData(id, { maxTokens: Number(e.target.value) })
+              <FieldLabel>Max Tokens</FieldLabel>
+              <TextInput
+                value={String(nodeData.maxTokens ?? 8192)}
+                onChange={(value) =>
+                  updateNodeData(id, { maxTokens: Number(value) || 0 })
                 }
-                className="w-full bg-[#0a0a0f] border border-[#2a2a4a] rounded px-2 py-1 text-xs text-white"
               />
             </div>
           </div>
         )}
 
-        {/* Response display (inline) */}
-        {(nodeOutput || nodeData.response) && (
-          <div className="mt-2 p-2 bg-[#0a0a0f] rounded border border-[#2a2a4a]">
-            <p className="text-xs text-muted mb-1">Response:</p>
-            <p className="text-xs text-white whitespace-pre-wrap max-h-32 overflow-y-auto">
-              {(nodeOutput as string) || nodeData.response}
-            </p>
-          </div>
-        )}
+        <div className="relative">
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={`${id}-response-text-out`}
+            className={outputHandleClass}
+          />
+          <SectionTitle>Response</SectionTitle>
+          <FieldBox className="mt-2 min-h-28 py-8 text-center text-[#98a2b3]">
+            {(nodeOutput || nodeData.response) ? (
+              <p className="max-h-32 overflow-y-auto whitespace-pre-wrap text-left text-[12px] text-[#101828] nowheel">
+                {(nodeOutput as string) || nodeData.response}
+              </p>
+            ) : (
+              "No output yet"
+            )}
+          </FieldBox>
+        </div>
       </div>
-
-      {/* Output Handle */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id={`${id}-response-text-out`}
-        className="!w-3 !h-3 !bg-primary !border-2 !border-[#1a1a2e]"
-      />
-    </div>
+    </NodeShell>
   );
 }
 

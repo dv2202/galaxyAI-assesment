@@ -28,6 +28,7 @@ export interface GeminiData {
   prompt?: string;
   systemPrompt?: string;
   imageInputs?: string[];
+  imageInputCount?: number;
   temperature?: number;
   maxTokens?: number;
   response?: string;

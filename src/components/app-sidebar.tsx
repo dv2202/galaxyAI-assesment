@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
+  AudioLines,
   BookOpen,
   CircleDot,
   Gift,
@@ -12,9 +13,9 @@ import {
   ImageIcon,
   Layers3,
   LifeBuoy,
-  PanelLeftClose,
   Search,
   Settings,
+  SquareLibrary,
   Sparkles,
   Star,
   Video,
@@ -36,9 +37,15 @@ const unfairAdvantageItems = [
   { label: "Ad Library", icon: Star, href: "/dashboard" },
 ];
 
-const historyItems = [
+const historyItems: Array<{
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  href: string;
+  disabled?: boolean;
+}> = [
   { label: "Image Library", icon: ImageIcon, href: "/dashboard" },
-  { label: "Video Library", icon: Video, href: "/dashboard", disabled: true },
+  { label: "Video Library", icon: Video, href: "/dashboard" },
+  { label: "Audio Library", icon: AudioLines, href: "/dashboard" },
 ];
 
 function SidebarLink({
@@ -64,12 +71,12 @@ function SidebarLink({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-all ${baseClass} ${disabledClass}`}
+      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${baseClass} ${disabledClass}`}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="hidden text-[15px] font-medium sm:block">{label}</span>
+      <span className="hidden text-[14px] font-medium sm:block">{label}</span>
       {badge ? (
-        <span className="ml-auto hidden rounded-full bg-[#f3e8ff] px-2 py-1 text-xs font-semibold text-[#7c3aed] sm:block">
+        <span className="ml-auto hidden rounded-full bg-[#f3e8ff] px-2 py-0.5 text-[11px] font-semibold text-[#7c3aed] sm:block">
           {badge}
         </span>
       ) : null}
@@ -84,39 +91,39 @@ export function AppSidebar() {
     pathname === "/dashboard" || pathname.startsWith("/workflow/");
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex w-[88px] flex-col border-r border-[#ddd8cd] bg-[#f6f4ef] sm:w-[290px]">
-      <div className="flex items-center justify-between px-4 py-5 sm:px-5">
+    <aside className="fixed inset-y-0 left-0 z-40 flex w-[88px] flex-col border-r border-[#e8e8e8] bg-[#fbfbfb] sm:w-[300px]">
+      <div className="flex items-center justify-between px-4 py-4 sm:px-5">
         <button
           type="button"
           onClick={() => router.push("/dashboard")}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-[#111111] text-white shadow-[0_12px_24px_rgba(17,17,17,0.22)]"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#111111] text-white"
           aria-label="Go to dashboard"
         >
-          <CircleDot className="h-6 w-6" />
+          <CircleDot className="h-5 w-5" />
         </button>
         <button
           type="button"
-          className="hidden rounded-xl border border-[#ddd8cd] bg-white p-2 text-[#8a8479] shadow-[0_8px_20px_rgba(15,23,42,0.06)] sm:block"
+          className="hidden rounded-xl p-2 text-[#5f6368] sm:block"
           aria-label="Collapse sidebar"
         >
-          <PanelLeftClose className="h-4 w-4" />
+          <SquareLibrary className="h-5 w-5" />
         </button>
       </div>
 
       <div className="px-2 pb-4 sm:px-3">
-        <div className="flex items-center gap-2 rounded-2xl border border-[#ddd8cd] bg-white px-3 py-3 shadow-[0_8px_20px_rgba(15,23,42,0.05)]">
-          <Search className="h-4 w-4 text-[#a29c91]" />
-          <span className="hidden flex-1 text-left text-[15px] text-[#a29c91] sm:block">
+        <div className="flex items-center gap-2 rounded-[18px] border border-[#e5e7eb] bg-white px-4 py-2.5 shadow-[0_6px_18px_rgba(17,24,39,0.08)]">
+          <Search className="h-4 w-4 text-[#b0b4bb]" />
+          <span className="hidden flex-1 text-left text-[14px] text-[#8d929a] sm:block">
             Quick search...
           </span>
-          <span className="hidden text-xs font-semibold text-[#c1bbaf] sm:block">
+          <span className="hidden text-xs font-semibold text-[#c1c5cb] sm:block">
             ⌘K
           </span>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-4 sm:px-3">
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {primaryItems.map((item) => (
             <SidebarLink
               key={item.label}
@@ -129,11 +136,14 @@ export function AppSidebar() {
           ))}
         </div>
 
-        <div className="mt-8">
-          <p className="hidden px-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#a29c91] sm:block">
-            Unfair Advantage
-          </p>
-          <div className="mt-3 space-y-1.5">
+        <div className="mt-10">
+          <div className="hidden items-center justify-between px-3 sm:flex">
+            <p className="text-[13px] font-semibold text-[#a5a7ac]">
+              Unfair Advantage
+            </p>
+            <span className="text-[#a5a7ac]">⌃</span>
+          </div>
+          <div className="mt-3 space-y-1">
             {unfairAdvantageItems.map((item) => (
               <SidebarLink
                 key={item.label}
@@ -145,11 +155,14 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <div className="mt-8">
-          <p className="hidden px-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#a29c91] sm:block">
-            Generation History
-          </p>
-          <div className="mt-3 space-y-1.5">
+        <div className="mt-10">
+          <div className="hidden items-center justify-between px-3 sm:flex">
+            <p className="text-[13px] font-semibold text-[#a5a7ac]">
+              Generation History
+            </p>
+            <span className="text-[#a5a7ac]">⌃</span>
+          </div>
+          <div className="mt-3 space-y-1">
             {historyItems.map((item) => (
               <SidebarLink
                 key={item.label}
@@ -161,30 +174,42 @@ export function AppSidebar() {
             ))}
           </div>
         </div>
+
+        <div className="mt-10">
+          <div className="hidden items-center justify-between px-3 sm:flex">
+            <p className="text-[13px] font-semibold text-[#c0c3c8]">Favorites</p>
+            <span className="text-[#c0c3c8]">⌃</span>
+          </div>
+          <div className="mt-3 hidden rounded-xl px-3 py-2 text-[15px] text-[#d1d3d7] sm:flex sm:items-center sm:gap-3">
+            <BookOpen className="h-4 w-4" />
+            Saved Prompts
+          </div>
+        </div>
       </div>
 
-      <div className="border-t border-[#ddd8cd] px-2 py-4 sm:px-3">
+      <div className="border-t border-[#ececec] px-3 py-4">
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#7c3aed,#9827ff)] px-4 py-4 text-sm font-semibold text-white shadow-[0_20px_32px_rgba(124,58,237,0.35)]"
-        >
-          <Sparkles className="h-4 w-4" />
-          <span className="hidden sm:block">Claim Offer</span>
-        </button>
-
-        <button
-          type="button"
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ddd8cd] bg-white px-4 py-3 text-sm font-medium text-[#57524b] shadow-[0_10px_20px_rgba(15,23,42,0.05)]"
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-full border border-[#d9dce3] bg-white px-4 py-2.5 text-[14px] font-medium text-[#5d6470] shadow-[0_4px_14px_rgba(17,24,39,0.05)]"
         >
           <Settings className="h-4 w-4" />
           <span className="hidden sm:block">Settings</span>
         </button>
 
-        <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl px-2 py-2 sm:justify-start">
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(90deg,#6158e5,#5c57d6)] px-4 py-3.5 text-[15px] font-semibold text-white shadow-[0_16px_32px_rgba(92,87,214,0.28)]"
+        >
+          <Sparkles className="h-4 w-4" />
+          <span className="hidden sm:block">Claim Offer</span>
+        </button>
+
+        <div className="mt-6 flex items-center justify-center gap-3 rounded-2xl border-t border-[#ececec] px-2 pt-5 sm:justify-start">
           <UserButton />
           <div className="hidden sm:block">
-            <p className="text-sm font-semibold text-[#171717]">Account</p>
-            <p className="text-xs text-[#8e887d]">Workspace access</p>
+            <p className="text-[14px] font-semibold text-[#171717]">
+              Devansh Vishwakarma
+            </p>
           </div>
         </div>
       </div>

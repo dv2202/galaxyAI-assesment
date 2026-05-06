@@ -40,6 +40,7 @@ export const geminiGenerateTask = task({
     const { prompt, systemPrompt, model, imageUrls } = payload;
 
     const apiKey = process.env.GOOGLE_AI_API_KEY;
+    console.log("GOOGLE_AI_API_KEY starts with:", apiKey?.substring(0, 15));
     if (!apiKey) {
       throw new Error("GOOGLE_AI_API_KEY not configured");
     }

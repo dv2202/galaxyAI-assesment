@@ -2,10 +2,17 @@
 
 import { memo, useRef, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Plus, X, Type, Image, Upload, Loader2 } from "lucide-react";
+import { GripVertical, ImageIcon, Loader2, Trash2, Type, Upload } from "lucide-react";
 import { useWorkflowStore } from "@/stores/workflow-store";
 import { useExecutionStore } from "@/stores/execution-store";
 import type { RequestInputsData, FieldDefinition } from "@/types/workflow";
+import {
+  HeaderAddButton,
+  imageInputHandleClass,
+  MiniInfoDot,
+  NodeShell,
+  TextareaInput,
+} from "./node-shell";
 
 const ACCEPTED_IMAGE_TYPES = ".jpg,.jpeg,.png,.webp,.gif";
 
@@ -44,7 +51,10 @@ function ImageUploadField({
       if (!assemblyRes.ok) throw new Error("Upload failed");
       let assembly = await assemblyRes.json();
 
-      while (assembly.ok === "ASSEMBLY_UPLOADING" || assembly.ok === "ASSEMBLY_EXECUTING") {
+      while (
+        assembly.ok === "ASSEMBLY_UPLOADING" ||
+        assembly.ok === "ASSEMBLY_EXECUTING"
+      ) {
         await new Promise((r) => setTimeout(r, 1500));
         const pollRes = await fetch(assembly.assembly_ssl_url);
         assembly = await pollRes.json();
@@ -54,10 +64,8 @@ function ImageUploadField({
         throw new Error(assembly.error || "Assembly failed");
       }
 
-      const results = assembly.results;
-      const firstResult = results[":original"]?.[0];
-      const uploadedUrl = firstResult?.ssl_url || firstResult?.url;
-
+      const uploadedUrl = assembly.uploads?.[0]?.url;
+      console.log("uploadedUrl", uploadedUrl);
       if (!uploadedUrl) throw new Error("No URL in assembly result");
       onValueChange(uploadedUrl);
     } catch (err) {
@@ -69,12 +77,12 @@ function ImageUploadField({
   }
 
   return (
-    <div className="w-full bg-[#0a0a0f] border border-[#2a2a4a] rounded px-2 py-2 text-xs text-muted">
+    <div className="w-full rounded-[12px] border border-[#e4e7ec] bg-[#f8fafc] p-2 text-[12px] text-[#667085]">
       {field.value ? (
         <img
           src={field.value}
           alt="uploaded"
-          className="w-full h-20 object-cover rounded mb-1"
+          className="mb-2 h-24 w-full rounded-[10px] object-cover"
         />
       ) : null}
 
@@ -89,22 +97,22 @@ function ImageUploadField({
       <button
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[#1a1a2e] border border-[#2a2a4a] rounded hover:border-primary/50 text-muted hover:text-white transition-colors disabled:opacity-50"
+        className="flex w-full nodrag items-center justify-center gap-1.5 rounded-[10px] border border-[#e4e7ec] bg-white py-2 text-[#475467] transition-colors hover:border-[#d0d5dd] hover:text-[#101828] disabled:opacity-50"
       >
         {uploading ? (
           <>
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin" />
             Uploading...
           </>
         ) : (
           <>
-            <Upload className="w-3 h-3" />
+            <Upload className="h-3 w-3" />
             {field.value ? "Replace image" : "Upload image"}
           </>
         )}
       </button>
 
-      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>
   );
 }
@@ -143,55 +151,42 @@ function RequestInputsNodeComponent({ id, data }: NodeProps) {
     });
   }
 
-  const statusClass =
-    nodeStatus === "RUNNING"
-      ? "node-executing"
-      : nodeStatus === "PENDING"
-        ? "node-pending"
-        : nodeStatus === "COMPLETED"
-          ? "node-completed"
-          : nodeStatus === "FAILED"
-            ? "node-failed"
-            : "";
-
   return (
-    <div
-      className={`bg-[#1a1a2e] border border-[#2a2a4a] rounded-xl min-w-[280px] shadow-lg ${statusClass}`}
+    <NodeShell
+      title="Request-Inputs"
+      status={nodeStatus}
+      widthClass="min-w-[380px]"
+      actions={<HeaderAddButton onClick={() => addField("text_field")} title="Add text input" />}
     >
-      <div className="px-4 py-3 border-b border-[#2a2a4a] flex items-center gap-2">
-        <div className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center">
-          <Type className="w-3 h-3 text-blue-400" />
-        </div>
-        <span className="text-sm font-medium text-white">Request Inputs</span>
-      </div>
-
-      <div className="p-3 space-y-2">
+      <div className="space-y-3">
         {fields.map((field) => (
-          <div key={field.id} className="relative group">
-            <div className="flex items-center gap-2 mb-1">
+          <div key={field.id} className="group relative">
+            <div className="mb-2 flex items-center gap-2">
+              <GripVertical className="h-3.5 w-3.5 text-[#98a2b3]" />
               {field.type === "image_field" ? (
-                <Image className="w-3 h-3 text-purple-400" />
+                <ImageIcon className="h-3.5 w-3.5 text-[#ec4899]" />
               ) : (
-                <Type className="w-3 h-3 text-blue-400" />
+                <Type className="h-3.5 w-3.5 text-[#ff9f0a]" />
               )}
               <input
                 value={field.name}
                 onChange={(e) => updateFieldName(field.id, e.target.value)}
-                className="text-xs bg-transparent border-none text-muted focus:text-white outline-none flex-1"
+                className="nodrag flex-1 border-none bg-transparent text-[13px] font-medium text-[#344054] outline-none"
               />
+              <MiniInfoDot />
               <button
                 onClick={() => removeField(field.id)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                className="opacity-0 transition-opacity group-hover:opacity-100"
               >
-                <X className="w-3 h-3 text-muted hover:text-danger" />
+                <Trash2 className="h-3.5 w-3.5 text-[#98a2b3] hover:text-[#ef4444]" />
               </button>
             </div>
             {field.type === "text_field" ? (
-              <textarea
+              <TextareaInput
                 value={field.value || ""}
-                onChange={(e) => updateFieldValue(field.id, e.target.value)}
+                onChange={(value) => updateFieldValue(field.id, value)}
                 placeholder="Enter text..."
-                className="w-full bg-[#0a0a0f] border border-[#2a2a4a] rounded px-2 py-1.5 text-xs text-white resize-none h-16"
+                className="h-20"
               />
             ) : (
               <ImageUploadField
@@ -203,29 +198,33 @@ function RequestInputsNodeComponent({ id, data }: NodeProps) {
               type="source"
               position={Position.Right}
               id={`${field.id}-${field.type === "image_field" ? "image" : "text"}-out`}
-              className="!w-3 !h-3 !bg-primary !border-2 !border-[#1a1a2e]"
+              className={
+                field.type === "image_field"
+                  ? "!h-[14px] !w-[14px] !-right-[7px] !border-[3px] !border-white !bg-[#ec4899] !shadow-[0_0_0_1px_rgba(236,72,153,0.25)]"
+                  : "!h-[14px] !w-[14px] !-right-[7px] !border-[3px] !border-white !bg-[#ff9f0a] !shadow-[0_0_0_1px_rgba(255,159,10,0.25)]"
+              }
             />
           </div>
         ))}
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-1">
           <button
             onClick={() => addField("text_field")}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-[#0a0a0f] border border-[#2a2a4a] rounded hover:border-primary/50 text-muted hover:text-white transition-colors"
+            className="flex items-center gap-1 rounded-[12px] border border-[#e4e7ec] bg-[#f8fafc] px-3 py-2 text-[12px] text-[#475467] transition-colors hover:border-[#d0d5dd] hover:text-[#101828]"
           >
-            <Plus className="w-3 h-3" />
+            <Type className="h-3.5 w-3.5 text-[#ff9f0a]" />
             Text
           </button>
           <button
             onClick={() => addField("image_field")}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-[#0a0a0f] border border-[#2a2a4a] rounded hover:border-primary/50 text-muted hover:text-white transition-colors"
+            className="flex items-center gap-1 rounded-[12px] border border-[#e4e7ec] bg-[#f8fafc] px-3 py-2 text-[12px] text-[#475467] transition-colors hover:border-[#d0d5dd] hover:text-[#101828]"
           >
-            <Plus className="w-3 h-3" />
+            <ImageIcon className="h-3.5 w-3.5 text-[#ec4899]" />
             Image
           </button>
         </div>
       </div>
-    </div>
+    </NodeShell>
   );
 }
 

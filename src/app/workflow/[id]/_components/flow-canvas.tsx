@@ -4,8 +4,6 @@ import { useCallback } from "react";
 import {
   ReactFlow,
   Background,
-  MiniMap,
-  Controls,
   BackgroundVariant,
   type IsValidConnection,
 } from "@xyflow/react";
@@ -61,25 +59,19 @@ export function FlowCanvas() {
       fitView
       multiSelectionKeyCode="Shift"
       deleteKeyCode={["Backspace", "Delete"]}
-      className="bg-[#0a0a0f]"
+      className="bg-[#ffffff]"
       defaultEdgeOptions={{
         animated: true,
-        style: { stroke: "#8b5cf6", strokeWidth: 2 },
+        style: { stroke: "#f6a31a", strokeWidth: 2.2 },
       }}
-      connectionLineStyle={{ stroke: "#8b5cf6", strokeWidth: 2 }}
+      connectionLineStyle={{ stroke: "#f6a31a", strokeWidth: 2.2 }}
     >
       <Background
         variant={BackgroundVariant.Dots}
-        gap={20}
-        size={1}
-        color="#2a2a4a"
+        gap={19}
+        size={1.15}
+        color="#d6d9de"
       />
-      <MiniMap
-        nodeColor="#8b5cf6"
-        maskColor="rgba(10, 10, 15, 0.8)"
-        position="bottom-right"
-      />
-      <Controls position="bottom-left" />
     </ReactFlow>
   );
 }

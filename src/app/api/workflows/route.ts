@@ -44,10 +44,13 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const count = await db.workflow.count({ where: { userId } });
+  const name = `Workflow ${count + 1}`;
+
   const workflow = await db.workflow.create({
     data: {
       userId,
-      name: "Untitled Workflow",
+      name,
       nodes: DEFAULT_NODES,
       edges: [],
     },

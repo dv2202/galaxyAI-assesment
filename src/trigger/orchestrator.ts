@@ -179,10 +179,11 @@ async function executeNode(
           model?: string;
         };
         const prompt = (inputValues.prompt as string) || nodeData.prompt || "";
+        const systemPrompt = (inputValues.systemPrompt as string) || nodeData.systemPrompt || "";
 
         const geminiResult = await geminiGenerateTask.triggerAndWait({
           prompt,
-          systemPrompt: nodeData.systemPrompt || "",
+          systemPrompt,
           model: nodeData.model || "gemini-2.5-pro",
           imageUrls: (inputValues.images as string[]) || [],
         });
@@ -253,7 +254,9 @@ function gatherInputs(
       inputs.inputImage = sourceValue;
     } else if (targetHandle.includes("image")) {
       if (sourceValue) images.push(sourceValue as string);
-    } else if (targetHandle.includes("prompt") && !targetHandle.includes("system")) {
+    } else if (targetHandle.includes("systemPrompt")) {
+      inputs.systemPrompt = sourceValue;
+    } else if (targetHandle.includes("prompt")) {
       inputs.prompt = sourceValue;
     } else if (targetHandle.includes("result")) {
       inputs.result = sourceValue;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MoreVertical,
@@ -29,6 +29,20 @@ export default function DashboardPage() {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [currentTime, setCurrentTime] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<WorkflowItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   useEffect(() => {
     let active = true;
@@ -71,10 +85,13 @@ export default function DashboardPage() {
     }
   }
 
-  async function deleteWorkflow(id: string) {
-    await fetch(`/api/workflows/${id}`, { method: "DELETE" });
-    setWorkflows((prev) => prev.filter((w) => w.id !== id));
-    setMenuOpen(null);
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await fetch(`/api/workflows/${deleteTarget.id}`, { method: "DELETE" });
+    setWorkflows((prev) => prev.filter((w) => w.id !== deleteTarget.id));
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   async function renameWorkflow(id: string) {
@@ -155,7 +172,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <section className="overflow-hidden rounded-[28px] border border-[#ddd8cd] bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
+          <section className="rounded-[28px] border border-[#ddd8cd] bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
             <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(180px,1.1fr)_120px] gap-4 border-b border-[#eee8dd] px-5 py-5 text-sm font-semibold text-[#766f65] sm:px-7">
               <div>Name</div>
               <div>Last Edited</div>
@@ -226,6 +243,7 @@ export default function DashboardPage() {
                       </div>
 
                       <div
+                        ref={menuOpen === workflow.id ? menuRef : undefined}
                         className="relative ml-auto"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -254,7 +272,10 @@ export default function DashboardPage() {
                               Rename
                             </button>
                             <button
-                              onClick={() => deleteWorkflow(workflow.id)}
+                              onClick={() => {
+                                setDeleteTarget(workflow);
+                                setMenuOpen(null);
+                              }}
                               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[#dc2626] transition hover:bg-[#f8f5ef]"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -285,6 +306,47 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-3xl border border-[#e6e0d6] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+              <Trash2 className="h-5 w-5 text-red-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#171717]">
+              Delete workflow
+            </h2>
+            <p className="mt-2 text-sm text-[#7b746a]">
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-[#171717]">
+                {deleteTarget.name}
+              </span>
+              ? This action cannot be undone.
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="rounded-2xl border border-[#ddd8cd] bg-white px-4 py-2.5 text-sm font-medium text-[#4b453e] transition hover:bg-[#f8f5ef] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex items-center gap-2 rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
