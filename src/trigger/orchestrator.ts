@@ -56,31 +56,14 @@ export const workflowOrchestrator = task({
 
       if (readyNodes.length === 0) break;
 
-      // Execute all ready nodes in parallel
-      const results = await Promise.allSettled(
-        readyNodes.map((nodeId) =>
-          executeNode(nodeId, nodes, edges, nodeOutputs, runId)
-        )
-      );
-
-      for (let i = 0; i < results.length; i++) {
-        const nodeId = readyNodes[i];
-        const result = results[i];
-
-        if (result.status === "fulfilled") {
-          nodeOutputs[nodeId] = result.value;
+      for (const nodeId of readyNodes) {
+        try {
+          const output = await executeNode(nodeId, nodes, edges, nodeOutputs, runId);
+          nodeOutputs[nodeId] = output;
           completedNodes.add(nodeId);
-        } else {
+        } catch (err) {
           completedNodes.add(nodeId);
           hasError = true;
-          await db.workflowNodeResult.update({
-            where: { runId_nodeId: { runId, nodeId } },
-            data: {
-              status: "FAILED",
-              error: result.reason?.message || "Unknown error",
-              completedAt: new Date(),
-            },
-          });
         }
       }
     }
@@ -93,6 +76,14 @@ export const workflowOrchestrator = task({
         const sourceOutput = nodeOutputs[incomingEdge.source];
         nodeOutputs[responseNode.id] = sourceOutput;
       }
+      await db.workflowNodeResult.update({
+        where: { runId_nodeId: { runId, nodeId: responseNode.id } },
+        data: {
+          status: "COMPLETED",
+          output: nodeOutputs[responseNode.id] as object ?? null,
+          completedAt: new Date(),
+        },
+      }).catch(() => {});
     }
 
     const duration = Date.now() - startTime;
@@ -184,7 +175,7 @@ async function executeNode(
         const geminiResult = await geminiGenerateTask.triggerAndWait({
           prompt,
           systemPrompt,
-          model: nodeData.model || "gemini-2.5-pro",
+          model: nodeData.model || "gemini-2.5-flash",
           imageUrls: (inputValues.images as string[]) || [],
         });
         if (geminiResult.ok) {

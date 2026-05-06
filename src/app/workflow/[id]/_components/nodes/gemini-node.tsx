@@ -58,10 +58,10 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
   const connectedHandles = new Set(
     edges.filter((e) => e.target === id).map((e) => e.targetHandle || "")
   );
-  const selectedModel = nodeData.model || "gemini-2.5-pro";
-  const title =
-    MODEL_OPTIONS.find((option) => option.value === selectedModel)?.label ||
-    "Gemini";
+  const selectedModel = nodeData.model || "gemini-2.5-flash";
+  const allNodes = useWorkflowStore((s) => s.nodes);
+  const geminiIndex = allNodes.filter((n) => n.type === "gemini").findIndex((n) => n.id === id) + 1;
+  const title = `Gemini #${geminiIndex || 1}`;
 
   return (
     <NodeShell

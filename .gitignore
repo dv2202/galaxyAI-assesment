@@ -50,3 +50,6 @@ prisma/*.db
 
 .trigger/
 .trigger
+
+# project notes
+FUTURE_SCOPE.md

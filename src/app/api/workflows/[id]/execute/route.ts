@@ -43,11 +43,7 @@ export async function POST(
   }
 
   const executableNodeIds = nodes
-    .filter(
-      (n) =>
-        n.type !== NODE_TYPES.REQUEST_INPUTS &&
-        n.type !== NODE_TYPES.RESPONSE
-    )
+    .filter((n) => n.type !== NODE_TYPES.REQUEST_INPUTS)
     .map((n) => n.id);
 
   const nodeIdsToExecute =
@@ -64,18 +60,14 @@ export async function POST(
     },
   });
 
-  // Create node result placeholders
-  for (const nodeId of nodeIdsToExecute) {
-    const node = nodes.find((n) => n.id === nodeId);
-    await db.workflowNodeResult.create({
-      data: {
-        runId: run.id,
-        nodeId,
-        nodeType: node?.type || "unknown",
-        status: "PENDING",
-      },
-    });
-  }
+  await db.workflowNodeResult.createMany({
+    data: nodeIdsToExecute.map((nodeId) => ({
+      runId: run.id,
+      nodeId,
+      nodeType: nodes.find((n) => n.id === nodeId)?.type || "unknown",
+      status: "PENDING",
+    })),
+  });
 
   // Trigger the orchestrator
   try {

@@ -46,36 +46,49 @@ export function useWorkflowExecute() {
     async (scope: RunScope, selectedNodes?: string[]) => {
       if (isExecuting || !workflowId) return;
 
+      const nodeIdsToExecute =
+        scope === "FULL"
+          ? nodes
+              .filter((n) => n.type !== "request-inputs")
+              .map((n) => n.id)
+          : selectedNodes || [];
+
+      startExecution("pending", nodeIdsToExecute);
+
       try {
-        if (isDirty) {
-          await fetch(`/api/workflows/${workflowId}`, {
-            method: "PATCH",
+        const savePromise = isDirty
+          ? fetch(`/api/workflows/${workflowId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ nodes, edges }),
+            }).then(() => markClean())
+          : Promise.resolve();
+
+        const [, executeRes] = await Promise.all([
+          savePromise,
+          fetch(`/api/workflows/${workflowId}/execute`, {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nodes, edges }),
-          });
-          markClean();
-        }
+            body: JSON.stringify({ scope, selectedNodes }),
+          }),
+        ]);
 
-        const res = await fetch(`/api/workflows/${workflowId}/execute`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scope, selectedNodes }),
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
+        if (!executeRes.ok) {
+          const err = await executeRes.json();
+          cancelExecutionStore();
           alert(`Execution failed: ${err.error || "Unknown error"}`);
           return;
         }
 
-        const { runId, nodeIds } = await res.json();
-        startExecution(runId, nodeIds);
+        const { runId } = await executeRes.json();
+        startExecution(runId, nodeIdsToExecute);
         pollRunStatus(runId);
       } catch {
+        cancelExecutionStore();
         alert("Failed to start execution");
       }
     },
-    [isExecuting, workflowId, isDirty, nodes, edges, markClean, startExecution, pollRunStatus]
+    [isExecuting, workflowId, isDirty, nodes, edges, markClean, startExecution, cancelExecutionStore, pollRunStatus]
   );
 
   const cancelExecution = useCallback(async () => {

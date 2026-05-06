@@ -3,14 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  MoreVertical,
+  MoreHorizontal,
   Pencil,
-  Play,
   Plus,
   Sparkles,
   Trash2,
+  Workflow,
+  Clock,
 } from "lucide-react";
 import { useConsoleLog } from "@/hooks/use-console-log";
+import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { AppSidebar } from "@/components/app-sidebar";
 
 interface WorkflowItem {
@@ -18,6 +20,7 @@ interface WorkflowItem {
   name: string;
   updatedAt: string;
   createdAt: string;
+  lastRunStatus: string | null;
 }
 
 export default function DashboardPage() {
@@ -32,6 +35,7 @@ export default function DashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<WorkflowItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { collapsed, toggleCollapsed } = useSidebarCollapse();
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -46,28 +50,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let active = true;
-
     async function loadWorkflows() {
       const res = await fetch("/api/workflows");
       if (!active) return;
-
       if (res.ok) {
         const data = await res.json();
-        if (active) {
-          setWorkflows(data);
-        }
+        if (active) setWorkflows(data);
       }
-
-      if (active) {
-        setLoading(false);
-      }
+      if (active) setLoading(false);
     }
-
     void loadWorkflows();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -112,11 +105,7 @@ export default function DashboardPage() {
     const diffMinutes = Math.round(
       (new Date(timestamp).getTime() - currentTime) / 60000
     );
-
-    const formatter = new Intl.RelativeTimeFormat(undefined, {
-      numeric: "auto",
-    });
-
+    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
     const ranges: Array<[Intl.RelativeTimeFormatUnit, number]> = [
       ["year", 525600],
       ["month", 43200],
@@ -124,102 +113,121 @@ export default function DashboardPage() {
       ["hour", 60],
       ["minute", 1],
     ];
-
     for (const [unit, minutes] of ranges) {
       if (Math.abs(diffMinutes) >= minutes || unit === "minute") {
         return formatter.format(Math.round(diffMinutes / minutes), unit);
       }
     }
-
     return "just now";
   }
 
-  function workflowStatus(timestamp: string) {
-    const minutesAgo = (currentTime - new Date(timestamp).getTime()) / 60000;
-    return minutesAgo < 5 ? "Running" : null;
+  function statusDisplay(lastRunStatus: string | null) {
+    switch (lastRunStatus) {
+      case "RUNNING":
+      case "PENDING":
+        return { label: "Running", color: "bg-emerald-50 text-emerald-600", dot: "bg-emerald-500 animate-pulse" };
+      case "COMPLETED":
+        return { label: "Completed", color: "bg-blue-50 text-blue-600", dot: "bg-blue-500" };
+      case "FAILED":
+        return { label: "Failed", color: "bg-red-50 text-red-600", dot: "bg-red-500" };
+      case "PARTIAL":
+        return { label: "Partial", color: "bg-amber-50 text-amber-600", dot: "bg-amber-500" };
+      default:
+        return { label: "Idle", color: "bg-[#f3f4f6] text-[#9ca3af]", dot: "bg-[#d1d5db]" };
+    }
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f4ef] text-[#171717]">
-      <AppSidebar />
+    <div className="min-h-screen bg-white text-[#111]">
+      <AppSidebar collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
 
-      <main className="min-h-screen pl-[88px] sm:pl-[290px]">
-        <div className="px-5 py-6 sm:px-8 sm:py-8">
-          <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <main
+        className={`min-h-screen transition-[padding] duration-300 ${
+          collapsed ? "pl-0" : "pl-[88px] sm:pl-[256px]"
+        }`}
+      >
+        <div className="mx-auto max-w-[1100px] px-6 py-10 sm:px-10">
+          {/* Header */}
+          <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[#171717]">
-                My Workflows
+              <h1 className="text-[28px] font-bold tracking-tight text-[#111]">
+                Workflows
               </h1>
-              <p className="mt-2 text-lg text-[#7b746a]">
-                Create, open, and manage your automation workflows.
+              <p className="mt-1 text-[15px] text-[#6b7280]">
+                Build and manage your AI automation pipelines.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="rounded-2xl border border-[#ddd8cd] bg-white px-5 py-3 text-sm font-medium text-[#4b453e] shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:border-[#cfc8ba]"
+                className="rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-[13px] font-medium text-[#374151] transition hover:bg-[#f9fafb]"
               >
                 Load Sample
               </button>
               <button
                 onClick={createWorkflow}
-                className="flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#7c3aed,#9827ff)] px-5 py-3 text-sm font-semibold text-white shadow-[0_20px_32px_rgba(124,58,237,0.35)] transition hover:scale-[1.01]"
+                className="flex items-center gap-2 rounded-xl bg-[#111] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#222]"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 New Workflow
               </button>
             </div>
           </div>
 
-          <section className="rounded-[28px] border border-[#ddd8cd] bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
-            <div className="grid grid-cols-[minmax(0,1.6fr)_minmax(180px,1.1fr)_120px] gap-4 border-b border-[#eee8dd] px-5 py-5 text-sm font-semibold text-[#766f65] sm:px-7">
-              <div>Name</div>
-              <div>Last Edited</div>
-              <div>Status</div>
+          {/* Table */}
+          {loading ? (
+            <div className="flex items-center justify-center py-32">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#111] border-t-transparent" />
             </div>
+          ) : workflows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#e5e7eb] py-24 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f3f4f6]">
+                <Sparkles className="h-6 w-6 text-[#6b7280]" />
+              </div>
+              <h2 className="mt-5 text-[17px] font-semibold text-[#111]">
+                No workflows yet
+              </h2>
+              <p className="mt-1.5 max-w-sm text-[14px] text-[#6b7280]">
+                Create your first workflow to start building AI-powered automations.
+              </p>
+              <button
+                onClick={createWorkflow}
+                className="mt-6 flex items-center gap-2 rounded-xl bg-[#111] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#222]"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Create Workflow
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[#e5e7eb]">
+              {/* Table header */}
+              <div className="grid grid-cols-[1fr_160px_100px_48px] items-center gap-4 border-b border-[#f3f4f6] bg-[#fafafa] px-5 py-3 text-[12px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+                <div>Name</div>
+                <div>Last Edited</div>
+                <div>Status</div>
+                <div />
+              </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center px-6 py-16">
-                <div className="h-9 w-9 rounded-full border-2 border-[#7c3aed] border-t-transparent animate-spin" />
-              </div>
-            ) : workflows.length === 0 ? (
-              <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-                <div className="rounded-full bg-[#f4f0e8] p-4 text-[#7c3aed]">
-                  <Sparkles className="h-8 w-8" />
-                </div>
-                <h2 className="mt-5 text-xl font-semibold text-[#171717]">
-                  No workflows yet
-                </h2>
-                <p className="mt-2 max-w-md text-[#7b746a]">
-                  Create your first workflow to start building AI-powered
-                  automations.
-                </p>
-                <button
-                  onClick={createWorkflow}
-                  className="mt-6 flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#7c3aed,#9827ff)] px-5 py-3 text-sm font-semibold text-white shadow-[0_20px_32px_rgba(124,58,237,0.35)]"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Workflow
-                </button>
-              </div>
-            ) : (
-              workflows.map((workflow) => {
-                const status = workflowStatus(workflow.updatedAt);
+              {/* Rows */}
+              {workflows.map((workflow) => {
+                const status = statusDisplay(workflow.lastRunStatus);
+                const isRunning = workflow.lastRunStatus === "RUNNING" || workflow.lastRunStatus === "PENDING";
 
                 return (
                   <div
                     key={workflow.id}
-                    className="group grid cursor-pointer grid-cols-[minmax(0,1.6fr)_minmax(180px,1.1fr)_120px] gap-4 border-b border-[#eee8dd] px-5 py-6 transition hover:bg-[#fcfaf6] last:border-b-0 sm:px-7"
+                    className="group grid cursor-pointer grid-cols-[1fr_160px_100px_48px] items-center gap-4 border-b border-[#f3f4f6] px-5 py-4 transition-colors last:border-b-0 hover:bg-[#fafafa]"
                     onClick={() => {
                       if (!renaming && !menuOpen) {
                         router.push(`/workflow/${workflow.id}`);
                       }
                     }}
                   >
+                    {/* Name */}
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f4f0e8] text-[#7c3aed]">
-                        <Play className="h-4 w-4" />
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isRunning ? "bg-emerald-50" : "bg-[#f3f4f6]"}`}>
+                        <Workflow className={`h-4 w-4 ${isRunning ? "text-emerald-500" : "text-[#9ca3af]"}`} />
                       </div>
                       <div className="min-w-0">
                         {renaming === workflow.id ? (
@@ -232,109 +240,109 @@ export default function DashboardPage() {
                               if (e.key === "Escape") setRenaming(null);
                             }}
                             onBlur={() => renameWorkflow(workflow.id)}
-                            className="w-full rounded-xl border border-[#d7d1c5] bg-[#fcfaf6] px-3 py-2 text-sm font-medium text-[#171717] outline-none ring-0"
+                            className="w-full rounded-lg border border-[#d1d5db] bg-white px-2.5 py-1.5 text-[14px] font-medium text-[#111] outline-none ring-2 ring-[#111]/10"
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
-                          <p className="truncate text-[1.05rem] font-semibold text-[#171717]">
+                          <p className="truncate text-[14px] font-semibold text-[#111]">
                             {workflow.name}
                           </p>
                         )}
                       </div>
-
-                      <div
-                        ref={menuOpen === workflow.id ? menuRef : undefined}
-                        className="relative ml-auto"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={() =>
-                            setMenuOpen(
-                              menuOpen === workflow.id ? null : workflow.id
-                            )
-                          }
-                          className="rounded-xl p-2 text-[#8d867b] opacity-0 transition group-hover:opacity-100 hover:bg-[#f4f0e8]"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-
-                        {menuOpen === workflow.id && (
-                          <div className="absolute right-0 top-10 z-50 w-36 rounded-2xl border border-[#ddd8cd] bg-white py-1.5 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
-                            <button
-                              onClick={() => {
-                                setRenaming(workflow.id);
-                                setRenameValue(workflow.name);
-                                setMenuOpen(null);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[#171717] transition hover:bg-[#f8f5ef]"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Rename
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDeleteTarget(workflow);
-                                setMenuOpen(null);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[#dc2626] transition hover:bg-[#f8f5ef]"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
 
-                    <div className="flex items-center text-lg text-[#6f685f]">
+                    {/* Last edited */}
+                    <div className="flex items-center gap-1.5 text-[13px] text-[#6b7280]">
+                      <Clock className="h-3.5 w-3.5 text-[#9ca3af]" />
                       {formatUpdatedAt(workflow.updatedAt)}
                     </div>
 
-                    <div className="flex items-center">
-                      {status ? (
-                        <span className="rounded-full bg-[#fff4b8] px-3 py-1 text-sm font-medium text-[#8a6a00]">
-                          {status}
-                        </span>
-                      ) : (
-                        <span className="text-xl text-[#c0b7a8]">-</span>
+                    {/* Status */}
+                    <div>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium ${status.color}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+                        {status.label}
+                      </span>
+                    </div>
+
+                    {/* Menu */}
+                    <div
+                      ref={menuOpen === workflow.id ? menuRef : undefined}
+                      className="relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() =>
+                          setMenuOpen(menuOpen === workflow.id ? null : workflow.id)
+                        }
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9ca3af] opacity-0 transition-all group-hover:opacity-100 hover:bg-[#f3f4f6] hover:text-[#374151]"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+
+                      {menuOpen === workflow.id && (
+                        <div className="absolute right-0 top-9 z-50 w-40 overflow-hidden rounded-xl border border-[#e5e7eb] bg-white py-1 shadow-[0_10px_40px_rgba(0,0,0,0.10)]">
+                          <button
+                            onClick={() => {
+                              setRenaming(workflow.id);
+                              setRenameValue(workflow.name);
+                              setMenuOpen(null);
+                            }}
+                            className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-[#374151] transition hover:bg-[#f9fafb]"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-[#9ca3af]" />
+                            Rename
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget(workflow);
+                              setMenuOpen(null);
+                            }}
+                            className="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-red-600 transition hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
                 );
-              })
-            )}
-          </section>
+              })}
+            </div>
+          )}
         </div>
       </main>
 
+      {/* Delete confirmation modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-md rounded-3xl border border-[#e6e0d6] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+          <div className="mx-4 w-full max-w-md rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.15)]">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-red-50">
               <Trash2 className="h-5 w-5 text-red-500" />
             </div>
-            <h2 className="text-lg font-semibold text-[#171717]">
+            <h2 className="text-[16px] font-semibold text-[#111]">
               Delete workflow
             </h2>
-            <p className="mt-2 text-sm text-[#7b746a]">
+            <p className="mt-1.5 text-[14px] text-[#6b7280]">
               Are you sure you want to delete{" "}
-              <span className="font-medium text-[#171717]">
+              <span className="font-medium text-[#111]">
                 {deleteTarget.name}
               </span>
-              ? This action cannot be undone.
+              ? This cannot be undone.
             </p>
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleting}
-                className="rounded-2xl border border-[#ddd8cd] bg-white px-4 py-2.5 text-sm font-medium text-[#4b453e] transition hover:bg-[#f8f5ef] disabled:opacity-50"
+                className="rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-[13px] font-medium text-[#374151] transition hover:bg-[#f9fafb] disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 disabled={deleting}
-                className="flex items-center gap-2 rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-[13px] font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
               >
                 {deleting ? (
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />

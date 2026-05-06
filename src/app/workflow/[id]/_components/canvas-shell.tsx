@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { useConsoleLog } from "@/hooks/use-console-log";
+import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { useWorkflowStore } from "@/stores/workflow-store";
 import type { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 import { AppSidebar } from "@/components/app-sidebar";
 import { FlowCanvas } from "./flow-canvas";
 import { ToolbarControls } from "./toolbar-controls";
-import { HistoryPanel } from "./history-panel";
 import { CanvasToolbar } from "./canvas-toolbar";
+import { HistoryPanel } from "./history-panel";
 
 interface CanvasShellProps {
   workflowId: string;
@@ -27,6 +28,7 @@ export function CanvasShell({
   useConsoleLog();
   const hydrate = useWorkflowStore((s) => s.hydrate);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const { collapsed, toggleCollapsed } = useSidebarCollapse();
 
   useEffect(() => {
     hydrate(initialNodes, initialEdges, workflowId);
@@ -35,8 +37,8 @@ export function CanvasShell({
   return (
     <ReactFlowProvider>
       <div className="min-h-screen bg-[#ffffff]">
-        <AppSidebar />
-        <div className="pl-[88px] sm:pl-[300px]">
+        <AppSidebar collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
+        <div className={`transition-[padding] duration-300 ${collapsed ? "pl-0" : "pl-[88px] sm:pl-[256px]"}`}>
           <div className="flex h-screen overflow-hidden bg-white">
             <div className="relative min-w-0 flex-1">
               <ToolbarControls

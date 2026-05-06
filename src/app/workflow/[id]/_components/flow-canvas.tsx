@@ -9,6 +9,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useWorkflowStore } from "@/stores/workflow-store";
+import { useCanvasModeStore } from "@/stores/canvas-mode-store";
 import { useWorkflowPersist } from "@/hooks/use-workflow-persist";
 import { RequestInputsNode } from "./nodes/request-inputs-node";
 import { CropImageNode } from "./nodes/crop-image-node";
@@ -34,6 +35,7 @@ function parseHandleType(handleId: string | null | undefined): string | null {
 export function FlowCanvas() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect } =
     useWorkflowStore();
+  const selectMode = useCanvasModeStore((s) => s.selectMode);
 
   useWorkflowPersist();
 
@@ -57,6 +59,10 @@ export function FlowCanvas() {
       nodeTypes={nodeTypes}
       isValidConnection={isValidConnection}
       fitView
+      minZoom={0.1}
+      maxZoom={2}
+      panOnDrag={!selectMode}
+      selectionOnDrag={selectMode}
       multiSelectionKeyCode="Shift"
       deleteKeyCode={["Backspace", "Delete"]}
       className="bg-[#ffffff]"

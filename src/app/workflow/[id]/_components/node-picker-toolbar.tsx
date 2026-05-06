@@ -60,7 +60,7 @@ export function NodePickerToolbar() {
       data = { xPosition: 0, yPosition: 0, width: 100, height: 100 };
     } else if (type === NODE_TYPES.GEMINI) {
       data = {
-        model: "gemini-2.5-pro",
+        model: "gemini-2.5-flash",
         prompt: "",
         systemPrompt: "",
         imageInputs: [],

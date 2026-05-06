@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f1eb;
+  --background: #f9fafb;
   --foreground: #201d18;
   --card: #ffffff;
   --card-border: #e7e1d7;
@@ -56,8 +56,8 @@ summary {
 }
 
 .react-flow__node.selected > div {
-  border-color: rgba(139, 92, 246, 0.6) !important;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15),
+  border-color: rgba(255, 95, 95, 0.9) !important;
+  box-shadow: 0 0 0 1px rgba(255, 95, 95, 0.85),
     0 16px 40px rgba(15, 23, 42, 0.08);
 }
 

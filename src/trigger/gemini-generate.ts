@@ -47,7 +47,7 @@ export const geminiGenerateTask = task({
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const geminiModel = genAI.getGenerativeModel({
-      model: model || "gemini-2.5-pro",
+      model: model || "gemini-2.5-flash",
       systemInstruction: systemPrompt || undefined,
     });
 

@@ -1,22 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { NODE_TYPES } from "@/lib/constants";
-
-const DEFAULT_NODES = [
-  {
-    id: "request-inputs-1",
-    type: NODE_TYPES.REQUEST_INPUTS,
-    position: { x: 100, y: 200 },
-    data: { fields: [] },
-  },
-  {
-    id: "response-1",
-    type: NODE_TYPES.RESPONSE,
-    position: { x: 900, y: 200 },
-    data: { result: undefined },
-  },
-];
+import { SAMPLE_NODES, SAMPLE_EDGES } from "@/lib/sample-workflow";
 
 export async function GET() {
   const { userId } = await auth();
@@ -32,10 +18,23 @@ export async function GET() {
       name: true,
       updatedAt: true,
       createdAt: true,
+      runs: {
+        orderBy: { startedAt: "desc" },
+        take: 1,
+        select: { status: true },
+      },
     },
   });
 
-  return NextResponse.json(workflows);
+  const result = workflows.map((w) => ({
+    id: w.id,
+    name: w.name,
+    updatedAt: w.updatedAt,
+    createdAt: w.createdAt,
+    lastRunStatus: w.runs[0]?.status ?? null,
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST() {
@@ -51,8 +50,8 @@ export async function POST() {
     data: {
       userId,
       name,
-      nodes: DEFAULT_NODES,
-      edges: [],
+      nodes: SAMPLE_NODES as unknown as Prisma.InputJsonValue,
+      edges: SAMPLE_EDGES as unknown as Prisma.InputJsonValue,
     },
   });
 

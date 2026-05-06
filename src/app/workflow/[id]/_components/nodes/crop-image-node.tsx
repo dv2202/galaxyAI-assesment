@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Crop, Upload, RotateCcw, Info, Plus } from "lucide-react";
+import { Upload, RotateCcw, Info, Plus } from "lucide-react";
 import { useWorkflowStore } from "@/stores/workflow-store";
 import { useExecutionStore } from "@/stores/execution-store";
 import { useWorkflowExecute } from "@/hooks/use-workflow-execute";
@@ -10,7 +10,6 @@ import type { CropImageData } from "@/types/workflow";
 import {
   FieldLabel,
   NodeShell,
-  StatusPill,
 } from "./node-shell";
 
 const INPUT_HANDLE =
@@ -60,7 +59,7 @@ function SliderRow({
         className="nodrag flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[#98a2b3] transition-colors hover:bg-[#f2f4f7] hover:text-[#475467] disabled:cursor-default disabled:opacity-30"
         title={`Reset to ${defaultValue}`}
       >
-        <RotateCcw className="h-3 w-3" />
+        <RotateCcw className="h-4 w-4" />
       </button>
 
       <div className="flex h-8 w-[52px] shrink-0 items-center justify-center rounded-[10px] border border-[#e4e7ec] bg-[#f8fafc] text-[12px] font-medium text-[#101828]">
@@ -99,36 +98,38 @@ function CropImageNodeComponent({ id, data }: NodeProps) {
       onRun={() => execute("SINGLE_NODE", [id])}
       onDelete={() => removeNode(id)}
       isExecuting={isExecuting}
-      widthClass="min-w-[340px]"
+      widthClass="min-w-[430px]"
     >
-      {/* Input Image */}
-      <div className="relative flex items-center gap-3 rounded-[14px] border border-[#e4e7ec] bg-[#f8fafc] px-3 py-2.5">
+      <div className="relative flex items-center gap-3 px-1 pb-1">
         <Handle
           type="target"
           position={Position.Left}
           id={`${id}-inputImage-image-in`}
           className={INPUT_HANDLE}
         />
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#fff4e5]">
-          <Crop className="h-4 w-4 text-[#ff9f0a]" />
-        </div>
         <div className="min-w-0 flex-1">
           <span className="text-[12px] font-medium text-[#344054]">
             Input Image<span className="text-[#ef4444]">*</span>
           </span>
         </div>
         {hasImageConnection ? (
-          <StatusPill tone="connected">Connected</StatusPill>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded-[10px] border border-dashed border-[#e4e7ec] bg-[#fbfbfc] px-3 py-2 text-[12px] text-[#98a2b3]"
+          >
+            <Upload className="h-3 w-3" />
+            Change image
+          </button>
         ) : (
-          <div className="flex items-center gap-1.5 text-[11px] text-[#98a2b3]">
+          <div className="flex items-center gap-1.5 rounded-[10px] border border-dashed border-[#e4e7ec] bg-[#fbfbfc] px-3 py-2 text-[11px] text-[#98a2b3]">
             <Upload className="h-3 w-3" />
             Upload image
           </div>
         )}
       </div>
 
-      {/* Sliders */}
-      <div className="space-y-1">
+
+      <div className="space-y-2 pt-1">
         <SliderRow
           label="X Position (%)"
           value={nodeData.xPosition}
@@ -175,7 +176,7 @@ function CropImageNodeComponent({ id, data }: NodeProps) {
             />
           </div>
         ) : (
-          <div className="relative rounded-[12px] border border-[#e4e7ec] bg-[#f8fafc] py-6 text-center text-[12px] text-[#98a2b3]">
+          <div className="relative rounded-[12px] border border-[#e4e7ec] bg-[#f8fafc] py-14 text-center text-[12px] text-[#98a2b3]">
             <Handle
               type="source"
               position={Position.Right}

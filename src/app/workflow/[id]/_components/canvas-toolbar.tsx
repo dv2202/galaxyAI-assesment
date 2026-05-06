@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
+  ChevronLeft,
+  ChevronRight,
   Undo2,
   Redo2,
   Command,
@@ -19,8 +21,9 @@ import {
 } from "lucide-react";
 import { useReactFlow, useViewport } from "@xyflow/react";
 import { useWorkflowStore } from "@/stores/workflow-store";
+import { useCanvasModeStore } from "@/stores/canvas-mode-store";
+import Dagre from "@dagrejs/dagre";
 import { NON_DELETABLE_NODES, NODE_TYPES } from "@/lib/constants";
-import { buildDAG } from "@/lib/dag";
 import { KeyboardShortcutsModal } from "./keyboard-shortcuts-modal";
 import type { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
@@ -45,8 +48,15 @@ const NODE_OPTIONS = [
   },
 ];
 
+const CANVAS_TOOLBAR_COLLAPSED_KEY = "galaxy-canvas-toolbar-collapsed";
+
+function readToolbarCollapsedState() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(CANVAS_TOOLBAR_COLLAPSED_KEY) === "true";
+}
+
 function Sep() {
-  return <div className="h-7 w-px bg-[#e5e7eb]" />;
+  return <div className="h-5 w-px bg-[#e5e7eb]" />;
 }
 
 function Btn({
@@ -64,7 +74,7 @@ function Btn({
     <button
       onClick={onClick}
       title={title}
-      className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
         active
           ? "bg-[#efecff] text-[#6258e5]"
           : "text-[#6b7280] hover:bg-[#f5f7fb] hover:text-[#374151]"
@@ -78,63 +88,40 @@ function Btn({
 function autoArrange(nodes: WorkflowNode[], edges: WorkflowEdge[]) {
   if (nodes.length === 0) return nodes;
 
-  const graph = buildDAG(nodes, edges);
-  const layers = new Map<string, number>();
-
-  const queue: string[] = [];
-  for (const [id, deg] of graph.inDegree) {
-    if (deg === 0) {
-      queue.push(id);
-      layers.set(id, 0);
-    }
-  }
-
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    const currentLayer = layers.get(current) ?? 0;
-    for (const neighbor of graph.adjacency.get(current) ?? []) {
-      const existing = layers.get(neighbor) ?? 0;
-      layers.set(neighbor, Math.max(existing, currentLayer + 1));
-      const newDeg = (graph.inDegree.get(neighbor) ?? 1) - 1;
-      graph.inDegree.set(neighbor, newDeg);
-      if (newDeg === 0) queue.push(neighbor);
-    }
-  }
+  const g = new Dagre.graphlib.Graph({ directed: true, compound: false });
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: "LR", nodesep: 80, ranksep: 200, marginx: 40, marginy: 40 });
 
   for (const node of nodes) {
-    if (!layers.has(node.id)) layers.set(node.id, 0);
+    const w = node.measured?.width ?? 340;
+    const h = node.measured?.height ?? 200;
+    g.setNode(node.id, { width: w, height: h });
   }
 
-  const columns = new Map<number, string[]>();
-  for (const [id, layer] of layers) {
-    const col = columns.get(layer) ?? [];
-    col.push(id);
-    columns.set(layer, col);
+  for (const edge of edges) {
+    g.setEdge(edge.source, edge.target);
   }
 
-  const X_GAP = 350;
-  const Y_GAP = 200;
+  Dagre.layout(g);
 
   return nodes.map((node) => {
-    const layer = layers.get(node.id) ?? 0;
-    const col = columns.get(layer) ?? [];
-    const idx = col.indexOf(node.id);
-    const colHeight = col.length * Y_GAP;
+    const pos = g.node(node.id);
+    const w = node.measured?.width ?? 340;
+    const h = node.measured?.height ?? 200;
     return {
       ...node,
-      position: {
-        x: 100 + layer * X_GAP,
-        y: 100 + idx * Y_GAP - colHeight / 2 + Y_GAP / 2,
-      },
+      position: { x: pos.x - w / 2, y: pos.y - h / 2 },
     };
   });
 }
 
 export function CanvasToolbar() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [selectMode, setSelectMode] = useState(false);
+  const selectMode = useCanvasModeStore((s) => s.selectMode);
+  const toggleSelectMode = useCanvasModeStore((s) => s.toggleSelectMode);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [collapsed, setCollapsed] = useState(readToolbarCollapsedState);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { zoomIn, zoomOut, fitView, setNodes, getViewport } = useReactFlow();
   const viewport = useViewport();
@@ -146,6 +133,15 @@ export function CanvasToolbar() {
       searchInputRef.current.focus();
     }
   }, [pickerOpen]);
+
+  useEffect(() => {
+    function syncToolbarCollapsed() {
+      setCollapsed(readToolbarCollapsedState());
+    }
+
+    window.addEventListener("storage", syncToolbarCollapsed);
+    return () => window.removeEventListener("storage", syncToolbarCollapsed);
+  }, []);
 
   const filtered = NODE_OPTIONS.filter(
     (opt) =>
@@ -164,7 +160,7 @@ export function CanvasToolbar() {
     if (type === NODE_TYPES.CROP_IMAGE) {
       data = { xPosition: 0, yPosition: 0, width: 100, height: 100 };
     } else if (type === NODE_TYPES.GEMINI) {
-      data = { model: "gemini-2.5-pro", prompt: "", systemPrompt: "", imageInputs: [] };
+      data = { model: "gemini-2.5-flash", prompt: "", systemPrompt: "", imageInputs: [] };
     }
     addNode({ id, type, position, data });
     setPickerOpen(false);
@@ -172,6 +168,15 @@ export function CanvasToolbar() {
   }
 
   const zoomPercent = Math.round(viewport.zoom * 100);
+
+  const toggleCollapsed = useCallback(() => {
+    const nextValue = !readToolbarCollapsedState();
+    window.localStorage.setItem(
+      CANVAS_TOOLBAR_COLLAPSED_KEY,
+      String(nextValue)
+    );
+    setCollapsed(nextValue);
+  }, []);
 
   const handleUndo = useCallback(() => {
     useWorkflowStore.temporal.getState().undo();
@@ -193,16 +198,8 @@ export function CanvasToolbar() {
   }, [fitView]);
 
   const handleToggleSelectMode = useCallback(() => {
-    setSelectMode((prev) => !prev);
-    const flow = document.querySelector(".react-flow");
-    if (flow) {
-      if (!selectMode) {
-        flow.classList.add("select-mode");
-      } else {
-        flow.classList.remove("select-mode");
-      }
-    }
-  }, [selectMode]);
+    toggleSelectMode();
+  }, [toggleSelectMode]);
 
   const handleSelectAll = useCallback(() => {
     const { nodes } = useWorkflowStore.getState();
@@ -355,115 +352,133 @@ export function CanvasToolbar() {
 
   return (
     <>
-      <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2">
-        <div className="flex items-center gap-1 rounded-[20px] border border-[#e5e7eb] bg-white px-3 py-2 shadow-[0_18px_40px_rgba(17,24,39,0.08)]">
-          <Btn onClick={handleUndo} title="Undo (⌘Z)">
-            <Undo2 className="h-4 w-4" />
-          </Btn>
-          <Btn onClick={handleRedo} title="Redo (⌘⇧Z)">
-            <Redo2 className="h-4 w-4" />
-          </Btn>
-          <Btn
-            onClick={() => setShortcutsOpen(true)}
-            title="Keyboard Shortcuts"
+      <div className="absolute bottom-5 left-5 z-10">
+        {collapsed ? (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            title="Expand toolbar"
+            className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-[#6b7280] shadow-[0_12px_30px_rgba(17,24,39,0.06)] transition hover:bg-[#fafafa] hover:text-[#374151]"
           >
-            <Command className="h-4 w-4" />
-          </Btn>
+            <ChevronRight className="h-4 w-4" />
+            {/* <span className="text-[11px] font-medium">{zoomPercent}%</span> */}
+          </button>
+        ) : (
+          <div className="flex items-center gap-0.5 rounded-2xl border border-[#e5e7eb] bg-white px-2.5 py-1.5 shadow-[0_12px_30px_rgba(17,24,39,0.06)]">
+            <Btn onClick={toggleCollapsed} title="Collapse toolbar">
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Btn>
 
-          <Sep />
+            <Sep />
 
-          <Btn onClick={() => zoomOut({ duration: 200 })} title="Zoom Out (-)">
-            <ZoomOut className="h-4 w-4" />
-          </Btn>
-          <span className="min-w-[42px] text-center text-xs font-medium text-[#6b7280]">
-            {zoomPercent}%
-          </span>
-          <Btn onClick={() => zoomIn({ duration: 200 })} title="Zoom In (+)">
-            <ZoomIn className="h-4 w-4" />
-          </Btn>
-
-          <Sep />
-
-          <Btn onClick={handleFitView} title="Fit View (F)">
-            <Maximize2 className="h-4 w-4" />
-          </Btn>
-          <Btn onClick={handleAutoArrange} title="Auto-arrange (⇧A)">
-            <LayoutGrid className="h-4 w-4" />
-          </Btn>
-          <Btn
-            onClick={handleToggleSelectMode}
-            title="Toggle Select Mode (S)"
-            active={selectMode}
-          >
-            {selectMode ? (
-              <MousePointer2 className="h-4 w-4" />
-            ) : (
-              <Move className="h-4 w-4" />
-            )}
-          </Btn>
-
-          <Sep />
-
-          <div className="relative">
-            {pickerOpen && (
-              <div className="absolute bottom-14 right-0 w-80 overflow-hidden rounded-[22px] border border-[#e5e7eb] bg-white shadow-[0_24px_60px_rgba(17,24,39,0.12)]">
-                <div className="border-b border-[#eef0f3] p-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9ca3af]" />
-                    <input
-                      ref={searchInputRef}
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search nodes..."
-                      className="nodrag w-full rounded-xl border border-[#e5e7eb] bg-[#f8fafc] py-2 pl-9 pr-3 text-xs text-[#2d2a24] placeholder:text-[#9ca3af]"
-                    />
-                  </div>
-                </div>
-                <div className="max-h-60 overflow-y-auto p-2">
-                  {filtered.length === 0 ? (
-                    <p className="py-4 text-center text-xs text-[#9e9689]">
-                      No nodes found
-                    </p>
-                  ) : (
-                    filtered.map((opt) => (
-                      <button
-                        key={opt.type}
-                        onClick={() => handleAddNode(opt.type)}
-                        className="flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-colors hover:bg-[#f7f9fc]"
-                      >
-                        <div
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${opt.bgColor}`}
-                        >
-                          <opt.icon className={`h-4 w-4 ${opt.color}`} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#201d18]">
-                            {opt.label}
-                          </p>
-                          <p className="text-xs text-[#8f877a]">{opt.description}</p>
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+            <Btn onClick={handleUndo} title="Undo (⌘Z)">
+              <Undo2 className="h-3.5 w-3.5" />
+            </Btn>
+            <Btn onClick={handleRedo} title="Redo (⌘⇧Z)">
+              <Redo2 className="h-3.5 w-3.5" />
+            </Btn>
             <Btn
-              onClick={() => {
-                setPickerOpen(!pickerOpen);
-                setSearch("");
-              }}
-              title="Add Node"
-              active={pickerOpen}
+              onClick={() => setShortcutsOpen(true)}
+              title="Keyboard Shortcuts"
             >
-              {pickerOpen ? (
-                <X className="h-4 w-4" />
+              <Command className="h-3.5 w-3.5" />
+            </Btn>
+
+            <Sep />
+
+            <Btn onClick={() => zoomOut({ duration: 200 })} title="Zoom Out (-)">
+              <ZoomOut className="h-3.5 w-3.5" />
+            </Btn>
+            <span className="min-w-[36px] text-center text-[11px] font-medium text-[#6b7280]">
+              {zoomPercent}%
+            </span>
+            <Btn onClick={() => zoomIn({ duration: 200 })} title="Zoom In (+)">
+              <ZoomIn className="h-3.5 w-3.5" />
+            </Btn>
+
+            <Sep />
+
+            <Btn onClick={handleFitView} title="Fit View (F)">
+              <Maximize2 className="h-3.5 w-3.5" />
+            </Btn>
+            <Btn onClick={handleAutoArrange} title="Auto-arrange (⇧A)">
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </Btn>
+            <Btn
+              onClick={handleToggleSelectMode}
+              title="Toggle Select Mode (S)"
+              active={selectMode}
+            >
+              {selectMode ? (
+                <MousePointer2 className="h-3.5 w-3.5" />
               ) : (
-                <Plus className="h-4 w-4" />
+                <Move className="h-3.5 w-3.5" />
               )}
             </Btn>
+
+            <Sep />
+
+            <div className="relative">
+              {pickerOpen && (
+                <div className="absolute bottom-10 right-0 w-72 overflow-hidden rounded-xl border border-[#e5e7eb] bg-white shadow-[0_16px_40px_rgba(17,24,39,0.10)]">
+                  <div className="border-b border-[#eef0f3] p-2.5">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-[#9ca3af]" />
+                      <input
+                        ref={searchInputRef}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search nodes..."
+                        className="nodrag w-full rounded-lg border border-[#e5e7eb] bg-[#f8fafc] py-1.5 pl-8 pr-2.5 text-xs text-[#2d2a24] placeholder:text-[#9ca3af]"
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-52 overflow-y-auto p-1.5">
+                    {filtered.length === 0 ? (
+                      <p className="py-3 text-center text-xs text-[#9e9689]">
+                        No nodes found
+                      </p>
+                    ) : (
+                      filtered.map((opt) => (
+                        <button
+                          key={opt.type}
+                          onClick={() => handleAddNode(opt.type)}
+                          className="flex w-full items-center gap-2.5 rounded-lg p-2 text-left transition-colors hover:bg-[#f7f9fc]"
+                        >
+                          <div
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${opt.bgColor}`}
+                          >
+                            <opt.icon className={`h-3.5 w-3.5 ${opt.color}`} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-[#201d18]">
+                              {opt.label}
+                            </p>
+                            <p className="text-[11px] text-[#8f877a]">{opt.description}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+              <Btn
+                onClick={() => {
+                  setPickerOpen(!pickerOpen);
+                  setSearch("");
+                }}
+                title="Add Node"
+                active={pickerOpen}
+              >
+                {pickerOpen ? (
+                  <X className="h-3.5 w-3.5" />
+                ) : (
+                  <Plus className="h-3.5 w-3.5" />
+                )}
+              </Btn>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <KeyboardShortcutsModal

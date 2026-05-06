@@ -5,7 +5,6 @@ import {
   Info,
   LoaderCircle,
   Play,
-  RotateCcw,
   Trash2,
   CheckCircle2,
   XCircle,
@@ -96,8 +95,8 @@ export function NodeShell({
     <div
       className={`${widthClass} relative rounded-[18px] border border-[#edf0f5] bg-white shadow-[0_14px_32px_rgba(16,24,40,0.08)] ${getNodeStatusClass(status)}`}
     >
-      <div className="flex items-center gap-2 rounded-t-[18px] border-b border-[#edf0f5] bg-white px-3 py-2.5">
-        <p className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[#101828]">
+      <div className="flex items-center gap-2 rounded-t-[18px] border-b border-[#edf0f5] bg-white px-4 py-3">
+        <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#101828]">
           {title}
         </p>
         <div className="flex items-center gap-2">
@@ -105,9 +104,7 @@ export function NodeShell({
           <HeaderIconButton title="Node info">
             <Info className="h-3.5 w-3.5" />
           </HeaderIconButton>
-          <HeaderIconButton title="Refresh node">
-            <RotateCcw className="h-3.5 w-3.5" />
-          </HeaderIconButton>
+          
           {onRun ? (
             <button
               onClick={onRun}
@@ -164,7 +161,7 @@ export function NodeShell({
           ) : null} */}
         </div>
       </div>
-      <div className="space-y-3 bg-white p-3 rounded-[20px]">{children}</div>
+      <div className="space-y-3 rounded-[20px] bg-white p-4">{children}</div>
     </div>
   );
 }
