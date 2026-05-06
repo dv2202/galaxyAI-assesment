@@ -1,0 +1,46 @@
+{
+  "configPath": "/Users/devanshvishwakarma/Desktop/galaxyAI-assesment/.trigger/tmp/build-ws6Lxc/Desktop/galaxyAI-assesment/trigger.config.mjs",
+  "customConditions": [
+  ],
+  "prompts": [
+  ],
+  "queues": [
+  ],
+  "runtime": "node",
+  "runtimeVersion": "22.18.0",
+  "tasks": [
+    {
+      "entryPoint": "/Users/devanshvishwakarma/Desktop/galaxyAI-assesment/.trigger/tmp/build-ws6Lxc/Desktop/galaxyAI-assesment/src/trigger/crop-image.mjs",
+      "filePath": "src/trigger/crop-image.ts",
+      "id": "crop-image",
+      "maxDuration": 120,
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    {
+      "entryPoint": "/Users/devanshvishwakarma/Desktop/galaxyAI-assesment/.trigger/tmp/build-ws6Lxc/Desktop/galaxyAI-assesment/src/trigger/gemini-generate.mjs",
+      "filePath": "src/trigger/gemini-generate.ts",
+      "id": "gemini-generate",
+      "maxDuration": 60,
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    {
+      "entryPoint": "/Users/devanshvishwakarma/Desktop/galaxyAI-assesment/.trigger/tmp/build-ws6Lxc/Desktop/galaxyAI-assesment/src/trigger/orchestrator.mjs",
+      "filePath": "src/trigger/orchestrator.ts",
+      "id": "workflow-orchestrator",
+      "maxDuration": 300,
+      "retry": {
+        "maxAttempts": 1
+      }
+    }
+  ],
+  "timings": {
+    "src/trigger/crop-image.ts": 0.981833000000023,
+    "src/trigger/gemini-generate.ts": 0.8002920000000131,
+    "src/trigger/orchestrator.ts": 11.105625000000003
+  },
+  "workerEntryPoint": "/Users/devanshvishwakarma/Desktop/galaxyAI-assesment/.trigger/tmp/build-ws6Lxc/.npm/_npx/f51a09bd0abf5f10/node_modules/trigger.dev/dist/esm/entryPoints/dev-run-worker.mjs"
+}
