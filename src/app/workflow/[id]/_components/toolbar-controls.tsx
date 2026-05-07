@@ -54,10 +54,10 @@ export function ToolbarControls(props: ToolbarControlsProps) {
         {isExecuting ? (
           <button
             onClick={cancelExecution}
-            className="flex h-8 items-center gap-1.5 rounded-lg bg-[#efecff] px-3 text-xs font-semibold text-[#6d62eb] shadow-sm transition-colors hover:bg-[#e7e3ff]"
+            className="flex h-8 items-center gap-1.5 rounded-lg bg-[#fef2f2] px-3 text-xs font-semibold text-[#dc2626] shadow-sm transition-colors hover:bg-[#fee2e2]"
           >
-            <Square className="h-2.5 w-2.5" />
-            Running...
+            <Square className="h-2.5 w-2.5 fill-current" />
+            Stop
           </button>
         ) : (
           <button

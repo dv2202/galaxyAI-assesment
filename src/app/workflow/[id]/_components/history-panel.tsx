@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   ChevronDown,
@@ -9,6 +9,7 @@ import {
   ChevronsUpDown,
   XCircle,
 } from "lucide-react";
+import { useExecutionStore } from "@/stores/execution-store";
 
 interface NodeResultData {
   nodeId: string;
@@ -53,31 +54,32 @@ export function HistoryPanel({
   const [activeTab, setActiveTab] = useState<"ui" | "api">("ui");
   const [selectedFilter, setSelectedFilter] =
     useState<(typeof RUN_FILTERS)[number]["value"]>("ALL");
+  const isExecuting = useExecutionStore((s) => s.isExecuting);
+  const prevExecutingRef = useRef(isExecuting);
+
+  const fetchRuns = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/runs?workflowId=${workflowId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setRuns(data);
+    } catch {
+      // Silent fail
+    }
+  }, [workflowId]);
 
   useEffect(() => {
-    let active = true;
-
-    async function fetchRuns() {
-      try {
-        const res = await fetch(`/api/runs?workflowId=${workflowId}`);
-        if (!active || !res.ok) return;
-        const data = await res.json();
-        if (active) setRuns(data);
-      } catch {
-        // Silent fail
-      }
-    }
-
     void fetchRuns();
-    const interval = setInterval(() => {
-      void fetchRuns();
-    }, 5000);
+    const interval = setInterval(fetchRuns, isExecuting ? 1500 : 5000);
+    return () => clearInterval(interval);
+  }, [fetchRuns, isExecuting]);
 
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [workflowId]);
+  useEffect(() => {
+    if (prevExecutingRef.current !== isExecuting) {
+      prevExecutingRef.current = isExecuting;
+      void fetchRuns();
+    }
+  }, [isExecuting, fetchRuns]);
 
   function getStatusIcon(status: string) {
     switch (status) {

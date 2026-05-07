@@ -3,7 +3,7 @@
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import {
   AudioLines,
   BookOpen,
@@ -97,6 +97,8 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useUser();
+  console.log("user", user);
   const dashboardActive =
     pathname === "/dashboard" || pathname.startsWith("/workflow/");
 
@@ -230,7 +232,7 @@ export function AppSidebar({
 
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(90deg,#6158e5,#5c57d6)] px-3 py-2.5 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(92,87,214,0.24)]"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#111] px-3 py-2.5 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(17,17,17,0.16)] transition hover:bg-[#222]"
           >
             <Sparkles className="h-3.5 w-3.5" />
             <span className="hidden sm:block">Claim Offer</span>
@@ -240,7 +242,7 @@ export function AppSidebar({
             <UserButton />
             <div className="hidden sm:block">
               <p className="text-[13px] font-semibold text-[#171717]">
-                Devansh Vishwakarma
+                {user?.fullName || user?.firstName || "User"}
               </p>
             </div>
           </div>

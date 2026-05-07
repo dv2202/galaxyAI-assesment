@@ -37,7 +37,7 @@ export function useWorkflowExecute() {
       };
 
       poll();
-      intervalRef.current = setInterval(poll, 1500);
+      intervalRef.current = setInterval(poll, 1000);
     },
     [updateNodeStatus]
   );

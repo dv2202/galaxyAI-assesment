@@ -29,11 +29,7 @@ import {
   TextInput,
 } from "./node-shell";
 
-const MODEL_OPTIONS = [
-  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-];
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 function GeminiNodeComponent({ id, data }: NodeProps) {
   const nodeData = data as unknown as GeminiData;
@@ -58,7 +54,6 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
   const connectedHandles = new Set(
     edges.filter((e) => e.target === id).map((e) => e.targetHandle || "")
   );
-  const selectedModel = nodeData.model || "gemini-2.5-flash";
   const allNodes = useWorkflowStore((s) => s.nodes);
   const geminiIndex = allNodes.filter((n) => n.type === "gemini").findIndex((n) => n.id === id) + 1;
   const title = `Gemini #${geminiIndex || 1}`;
@@ -74,17 +69,9 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
       actions={
         <div className="flex h-9 items-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] px-3">
           <Sparkles className="mr-1.5 h-4 w-4 text-[#7c3aed]" />
-          <select
-            value={selectedModel}
-            onChange={(e) => updateNodeData(id, { model: e.target.value })}
-            className="nodrag bg-transparent text-[15px] font-medium text-[#344054] outline-none"
-          >
-            {MODEL_OPTIONS.map((m) => (
-              <option key={m.value} value={m.value} className="bg-white">
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <span className="text-[15px] font-medium text-[#344054]">
+            Gemini 2.5 Flash
+          </span>
         </div>
       }
     >

@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<WorkflowItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { collapsed, toggleCollapsed } = useSidebarCollapse();
 
@@ -227,7 +228,8 @@ export default function DashboardPage() {
                     key={workflow.id}
                     className="group grid cursor-pointer grid-cols-[1fr_160px_100px_48px] items-center gap-4 border-b border-[#f3f4f6] px-5 py-4 transition-colors last:border-b-0 hover:bg-[#fafafa]"
                     onClick={() => {
-                      if (!renaming && !menuOpen) {
+                      if (!renaming && !menuOpen && !navigatingTo) {
+                        setNavigatingTo(workflow.id);
                         router.push(`/workflow/${workflow.id}`);
                       }
                     }}
@@ -235,7 +237,11 @@ export default function DashboardPage() {
                     {/* Name */}
                     <div className="flex min-w-0 items-center gap-3">
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isRunning ? "bg-emerald-50" : "bg-[#f3f4f6]"}`}>
-                        <Workflow className={`h-4 w-4 ${isRunning ? "text-emerald-500" : "text-[#9ca3af]"}`} />
+                        {navigatingTo === workflow.id ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#9ca3af] border-t-[#111]" />
+                        ) : (
+                          <Workflow className={`h-4 w-4 ${isRunning ? "text-emerald-500" : "text-[#9ca3af]"}`} />
+                        )}
                       </div>
                       <div className="min-w-0">
                         {renaming === workflow.id ? (

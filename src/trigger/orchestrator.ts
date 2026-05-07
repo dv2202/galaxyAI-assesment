@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task, batch } from "@trigger.dev/sdk/v3";
 import { db } from "@/lib/db";
 import { NODE_TYPES } from "@/lib/constants";
 import type { WorkflowNode, WorkflowEdge } from "@/types/workflow";
@@ -45,7 +45,6 @@ export const workflowOrchestrator = task({
     const executableIds = new Set(executableNodes.map((n) => n.id));
     let hasError = false;
 
-    // Main execution loop
     while (true) {
       const readyNodes = findReadyNodes(
         executableNodes,
@@ -56,14 +55,76 @@ export const workflowOrchestrator = task({
 
       if (readyNodes.length === 0) break;
 
+      await Promise.all(
+        readyNodes.map((nodeId) =>
+          db.workflowNodeResult.update({
+            where: { runId_nodeId: { runId, nodeId } },
+            data: { status: "RUNNING", startedAt: new Date() },
+          })
+        )
+      );
+
+      const batchStartTime = Date.now();
+
+      const batchItems: Array<{ task: typeof cropImageTask | typeof geminiGenerateTask; payload: Record<string, unknown> }> = [];
+      const batchNodeIds: string[] = [];
+
       for (const nodeId of readyNodes) {
-        try {
-          const output = await executeNode(nodeId, nodes, edges, nodeOutputs, runId);
-          nodeOutputs[nodeId] = output;
+        const node = nodes.find((n) => n.id === nodeId);
+        if (!node) continue;
+        const inputValues = gatherInputs(nodeId, nodes, edges, nodeOutputs);
+
+        if (node.type === NODE_TYPES.CROP_IMAGE) {
+          batchItems.push({
+            task: cropImageTask,
+            payload: {
+              imageUrl: inputValues.inputImage as string,
+              xPosition: (node.data as { xPosition?: number }).xPosition ?? 0,
+              yPosition: (node.data as { yPosition?: number }).yPosition ?? 0,
+              width: (node.data as { width?: number }).width ?? 100,
+              height: (node.data as { height?: number }).height ?? 100,
+            },
+          });
+          batchNodeIds.push(nodeId);
+        } else if (node.type === NODE_TYPES.GEMINI) {
+          const nodeData = node.data as { prompt?: string; systemPrompt?: string; model?: string };
+          batchItems.push({
+            task: geminiGenerateTask,
+            payload: {
+              prompt: (inputValues.prompt as string) || nodeData.prompt || "",
+              systemPrompt: (inputValues.systemPrompt as string) || nodeData.systemPrompt || "",
+              model: nodeData.model || "gemini-2.5-flash",
+              imageUrls: (inputValues.images as string[]) || [],
+            },
+          });
+          batchNodeIds.push(nodeId);
+        }
+      }
+
+      if (batchItems.length === 0) break;
+
+      const batchResult = await batch.triggerByTaskAndWait(batchItems as any);
+
+      for (let i = 0; i < batchNodeIds.length; i++) {
+        const nodeId = batchNodeIds[i];
+        const result = batchResult.runs[i];
+        const duration = Date.now() - batchStartTime;
+
+        if (result.ok) {
+          nodeOutputs[nodeId] = result.output;
           completedNodes.add(nodeId);
-        } catch (err) {
+          await db.workflowNodeResult.update({
+            where: { runId_nodeId: { runId, nodeId } },
+            data: { status: "COMPLETED", output: result.output as unknown as object, completedAt: new Date(), duration },
+          });
+        } else {
           completedNodes.add(nodeId);
           hasError = true;
+          const errorMessage = extractErrorMessage(result.error);
+          await db.workflowNodeResult.update({
+            where: { runId_nodeId: { runId, nodeId } },
+            data: { status: "FAILED", error: errorMessage, completedAt: new Date(), duration },
+          });
         }
       }
     }
@@ -126,96 +187,6 @@ function findReadyNodes(
   return ready;
 }
 
-async function executeNode(
-  nodeId: string,
-  nodes: WorkflowNode[],
-  edges: WorkflowEdge[],
-  nodeOutputs: Record<string, unknown>,
-  runId: string
-): Promise<unknown> {
-  const node = nodes.find((n) => n.id === nodeId);
-  if (!node) throw new Error(`Node ${nodeId} not found`);
-
-  await db.workflowNodeResult.update({
-    where: { runId_nodeId: { runId, nodeId } },
-    data: { status: "RUNNING", startedAt: new Date() },
-  });
-
-  const nodeStart = Date.now();
-  let result: unknown;
-
-  try {
-    const inputValues = gatherInputs(nodeId, nodes, edges, nodeOutputs);
-
-    switch (node.type) {
-      case NODE_TYPES.CROP_IMAGE: {
-        const cropResult = await cropImageTask.triggerAndWait({
-          imageUrl: inputValues.inputImage as string,
-          xPosition: (node.data as { xPosition?: number }).xPosition ?? 0,
-          yPosition: (node.data as { yPosition?: number }).yPosition ?? 0,
-          width: (node.data as { width?: number }).width ?? 100,
-          height: (node.data as { height?: number }).height ?? 100,
-        });
-        if (cropResult.ok) {
-          result = cropResult.output;
-        } else {
-          throw new Error("Crop task failed");
-        }
-        break;
-      }
-      case NODE_TYPES.GEMINI: {
-        const nodeData = node.data as {
-          prompt?: string;
-          systemPrompt?: string;
-          model?: string;
-        };
-        const prompt = (inputValues.prompt as string) || nodeData.prompt || "";
-        const systemPrompt = (inputValues.systemPrompt as string) || nodeData.systemPrompt || "";
-
-        const geminiResult = await geminiGenerateTask.triggerAndWait({
-          prompt,
-          systemPrompt,
-          model: nodeData.model || "gemini-2.5-flash",
-          imageUrls: (inputValues.images as string[]) || [],
-        });
-        if (geminiResult.ok) {
-          result = geminiResult.output;
-        } else {
-          throw new Error("Gemini task failed");
-        }
-        break;
-      }
-      default:
-        throw new Error(`Unknown node type: ${node.type}`);
-    }
-
-    const duration = Date.now() - nodeStart;
-    await db.workflowNodeResult.update({
-      where: { runId_nodeId: { runId, nodeId } },
-      data: {
-        status: "COMPLETED",
-        output: result as object,
-        completedAt: new Date(),
-        duration,
-      },
-    });
-
-    return result;
-  } catch (error) {
-    const duration = Date.now() - nodeStart;
-    await db.workflowNodeResult.update({
-      where: { runId_nodeId: { runId, nodeId } },
-      data: {
-        status: "FAILED",
-        error: error instanceof Error ? error.message : "Unknown error",
-        completedAt: new Date(),
-        duration,
-      },
-    });
-    throw error;
-  }
-}
-
 function gatherInputs(
   nodeId: string,
   nodes: WorkflowNode[],
@@ -257,4 +228,15 @@ function gatherInputs(
   if (images.length > 0) inputs.images = images;
 
   return inputs;
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const e = error as Record<string, unknown>;
+    if (typeof e.message === "string") return e.message;
+    if (typeof e.error === "string") return e.error;
+  }
+  return "Unknown error";
 }
