@@ -18,7 +18,7 @@ function ResponseNodeComponent({ id, data }: NodeProps) {
   const nodeOutput = useExecutionStore((s) => s.nodeOutputs[id]);
 
   return (
-    <NodeShell title="Response" status={nodeStatus} widthClass="w-[420px]">
+    <NodeShell title="Response" status={nodeStatus} widthClass="w-[460px]">
       <Handle
         type="target"
         position={Position.Left}

@@ -70,7 +70,7 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
       onRun={() => execute("SINGLE_NODE", [id])}
       onDelete={() => removeNode(id)}
       isExecuting={isExecuting}
-      widthClass="min-w-[480px] max-w-[540px]"
+      widthClass="min-w-[520px] max-w-[580px]"
       actions={
         <div className="flex h-9 items-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] px-3">
           <Sparkles className="mr-1.5 h-4 w-4 text-[#7c3aed]" />

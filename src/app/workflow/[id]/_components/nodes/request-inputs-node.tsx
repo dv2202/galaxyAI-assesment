@@ -222,7 +222,7 @@ function RequestInputsNodeComponent({ id, data }: NodeProps) {
     <NodeShell
       title="Request-Inputs"
       status={nodeStatus}
-      widthClass="min-w-[520px]"
+      widthClass="min-w-[560px]"
       actions={<AddFieldDropdown onAdd={addField} />}
     >
       <div className="space-y-4">

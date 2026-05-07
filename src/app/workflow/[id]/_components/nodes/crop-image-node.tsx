@@ -98,7 +98,7 @@ function CropImageNodeComponent({ id, data }: NodeProps) {
       onRun={() => execute("SINGLE_NODE", [id])}
       onDelete={() => removeNode(id)}
       isExecuting={isExecuting}
-      widthClass="min-w-[520px]"
+      widthClass="min-w-[560px]"
     >
       <div className="relative flex items-center gap-3 px-1 pb-1">
         <Handle

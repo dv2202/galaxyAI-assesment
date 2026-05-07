@@ -20,13 +20,13 @@ type ExecutionStatus =
   | undefined;
 
 export const inputHandleClass =
-  "!h-[16px] !w-[16px] !-left-[8px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1.5px_rgba(59,130,246,0.25)]";
+  "!h-[18px] !w-[18px] !-left-[9px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1.5px_rgba(59,130,246,0.25)]";
 
 export const imageInputHandleClass =
-  "!h-[16px] !w-[16px] !-left-[8px] !border-[3px] !border-white !bg-[#ec4899] !shadow-[0_0_0_1.5px_rgba(236,72,153,0.25)]";
+  "!h-[18px] !w-[18px] !-left-[9px] !border-[3px] !border-white !bg-[#ec4899] !shadow-[0_0_0_1.5px_rgba(236,72,153,0.25)]";
 
 export const outputHandleClass =
-  "!h-[16px] !w-[16px] !-right-[8px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1.5px_rgba(59,130,246,0.25)]";
+  "!h-[18px] !w-[18px] !-right-[9px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1.5px_rgba(59,130,246,0.25)]";
 
 export function getNodeStatusClass(status: ExecutionStatus) {
   if (status === "RUNNING") return "node-executing";
@@ -65,7 +65,7 @@ function HeaderIconButton({
     <button
       onClick={onClick}
       title={title}
-      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] text-[#98a2b3] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#475467]"
+      className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] text-[#98a2b3] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#475467]"
     >
       {children}
     </button>
@@ -80,7 +80,7 @@ export function NodeShell({
   isExecuting,
   children,
   actions,
-  widthClass = "min-w-[380px]",
+  widthClass = "min-w-[420px]",
 }: {
   title: string;
   status: ExecutionStatus;
@@ -95,8 +95,8 @@ export function NodeShell({
     <div
       className={`${widthClass} relative rounded-[20px] border border-[#edf0f5] bg-white shadow-[0_14px_32px_rgba(16,24,40,0.08)] ${getNodeStatusClass(status)}`}
     >
-      <div className="flex items-center gap-3 rounded-t-[20px] border-b border-[#edf0f5] bg-white px-6 py-4">
-        <p className="min-w-0 flex-1 truncate text-base font-semibold text-[#101828]">
+      <div className="flex items-center gap-3 rounded-t-[20px] border-b border-[#edf0f5] bg-white px-7 py-5">
+        <p className="min-w-0 flex-1 truncate text-lg font-semibold text-[#101828]">
           {title}
         </p>
         <div className="flex items-center gap-2.5">
@@ -109,7 +109,7 @@ export function NodeShell({
             <button
               onClick={onRun}
               disabled={isExecuting}
-              className={`flex h-9 items-center gap-2 rounded-xl border px-3.5 text-sm font-medium transition disabled:opacity-40 ${
+              className={`flex h-10 items-center gap-2 rounded-xl border px-4 text-base font-medium transition disabled:opacity-40 ${
                 status === "COMPLETED"
                   ? "border-[#9cddb0] bg-[#dff7e5] text-[#16a34a]"
                   : status === "FAILED"
@@ -151,7 +151,7 @@ export function NodeShell({
           ) : null}
         </div>
       </div>
-      <div className="space-y-4 rounded-b-[20px] bg-white p-6">{children}</div>
+      <div className="space-y-5 rounded-b-[20px] bg-white p-7">{children}</div>
     </div>
   );
 }
@@ -167,7 +167,7 @@ export function HeaderAddButton({
     <button
       onClick={onClick}
       title={title}
-      className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] text-[#667085] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#101828]"
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] text-[#667085] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#101828]"
     >
       <span className="text-lg leading-none">+</span>
     </button>
@@ -195,7 +195,7 @@ export function SegmentedTabs({
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            className={`flex-1 rounded-[14px] px-4 py-2.5 text-[15px] font-medium transition ${
+            className={`flex-1 rounded-[14px] px-4 py-3 text-base font-medium transition ${
               isActive
                 ? "bg-[#182230] text-white shadow-[0_4px_10px_rgba(16,24,40,0.12)]"
                 : "text-[#667085] hover:text-[#344054]"
@@ -222,7 +222,7 @@ export function InlineSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="nodrag h-11 w-full rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 text-[15px] text-[#101828] outline-none transition focus:border-[#cdd5df]"
+      className="nodrag h-12 w-full rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 text-base text-[#101828] outline-none transition focus:border-[#cdd5df]"
     >
       {children}
     </select>
@@ -248,7 +248,7 @@ export function TextareaInput({
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       placeholder={placeholder}
-      className={`nodrag nowheel w-full resize-none rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 py-3 text-[15px] text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`nodrag nowheel w-full resize-none rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 py-3.5 text-base text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     />
   );
 }
@@ -269,7 +269,7 @@ export function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`nodrag h-11 w-full rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 text-[15px] text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] ${className}`}
+      className={`nodrag h-12 w-full rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 text-base text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] ${className}`}
     />
   );
 }
@@ -285,7 +285,7 @@ export function KeyValueRow({
 }) {
   return (
     <div className="grid grid-cols-[1fr_minmax(0,1.6fr)_40px] items-center gap-3">
-      <div className="text-[15px] text-[#475467]">{label}</div>
+      <div className="text-base text-[#475467]">{label}</div>
       <div>{children}</div>
       <div className="flex justify-end">{after}</div>
     </div>
@@ -302,7 +302,7 @@ export function SideAddButton() {
 
 export function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[15px] font-medium text-[#344054]">{children}</p>
+    <p className="text-base font-medium text-[#344054]">{children}</p>
   );
 }
 
@@ -315,7 +315,7 @@ export function StatusPill({
 }) {
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${
         tone === "connected"
           ? "bg-[#eefaf2] text-[#16a34a]"
           : "bg-[#f5f7fa] text-[#667085]"
@@ -356,7 +356,7 @@ export function FieldLabel({
   info?: ReactNode;
 }) {
   return (
-    <div className="mb-2 flex items-center gap-1.5 text-[15px] text-[#475467]">
+    <div className="mb-2 flex items-center gap-1.5 text-base text-[#475467]">
       <label className="font-medium">
         {children}
         {required ? <span className="text-[#ef4444]">*</span> : null}
@@ -375,7 +375,7 @@ export function FieldBox({
 }) {
   return (
     <div
-      className={`rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 py-3 text-[15px] text-[#101828] ${className}`}
+      className={`rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 py-3.5 text-base text-[#101828] ${className}`}
     >
       {children}
     </div>
