@@ -78,6 +78,14 @@ export default function DashboardPage() {
     }
   }
 
+  async function loadSampleWorkflow() {
+    const res = await fetch("/api/workflows?sample=true", { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      router.push(`/workflow/${data.id}`);
+    }
+  }
+
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -160,7 +168,7 @@ export default function DashboardPage() {
 
             <div className="flex items-center gap-3">
               <button
-                type="button"
+                onClick={loadSampleWorkflow}
                 className="rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-[13px] font-medium text-[#374151] transition hover:bg-[#f9fafb]"
               >
                 Load Sample
@@ -200,7 +208,7 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-[#e5e7eb]">
+            <div className="rounded-2xl border border-[#e5e7eb]">
               {/* Table header */}
               <div className="grid grid-cols-[1fr_160px_100px_48px] items-center gap-4 border-b border-[#f3f4f6] bg-[#fafafa] px-5 py-3 text-[12px] font-semibold uppercase tracking-wider text-[#9ca3af]">
                 <div>Name</div>

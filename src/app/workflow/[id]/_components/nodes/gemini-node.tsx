@@ -70,14 +70,14 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
       onRun={() => execute("SINGLE_NODE", [id])}
       onDelete={() => removeNode(id)}
       isExecuting={isExecuting}
-      widthClass="min-w-[380px] max-w-[420px]"
+      widthClass="min-w-[480px] max-w-[540px]"
       actions={
-        <div className="flex h-8 items-center rounded-[10px] border border-[#e7eaf0] bg-[#f8fafc] px-2">
-          <Sparkles className="mr-1 h-3.5 w-3.5 text-[#7c3aed]" />
+        <div className="flex h-9 items-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] px-3">
+          <Sparkles className="mr-1.5 h-4 w-4 text-[#7c3aed]" />
           <select
             value={selectedModel}
             onChange={(e) => updateNodeData(id, { model: e.target.value })}
-            className="nodrag bg-transparent text-[12px] font-medium text-[#344054] outline-none"
+            className="nodrag bg-transparent text-[15px] font-medium text-[#344054] outline-none"
           >
             {MODEL_OPTIONS.map((m) => (
               <option key={m.value} value={m.value} className="bg-white">
@@ -88,7 +88,7 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
         </div>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="relative">
           <Handle
             type="target"
@@ -108,7 +108,7 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
                 ? "Connected from upstream"
                 : "Describe the content you want generated..."
             }
-            className="h-22"
+            className="h-28"
           />
           {hasPromptConnection ? (
             <div className="mt-2">
@@ -134,21 +134,21 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
                 ? "Connected from upstream"
                 : "Enter system prompt..."
             }
-            className="h-20"
+            className="h-24"
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {Array.from({ length: nodeData.imageInputCount ?? 1 }).map((_, i) => (
-            <div key={i} className="group/img relative flex items-center gap-2">
+            <div key={i} className="group/img relative flex items-center gap-2.5">
               <Handle
                 type="target"
                 position={Position.Left}
                 id={`${id}-image_${i}-image-in`}
                 className={imageInputHandleClass}
               />
-              <ImageIcon className="h-3.5 w-3.5 text-[#ec4899]" />
-              <span className="text-[12px] text-[#475467]">
+              <ImageIcon className="h-4 w-4 text-[#ec4899]" />
+              <span className="text-[15px] text-[#475467]">
                 Image{(nodeData.imageInputCount ?? 1) > 1 ? ` ${i + 1}` : ""} (Vision)
               </span>
               {connectedHandles.has(`${id}-image_${i}-image-in`) && (
@@ -163,7 +163,7 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
                   }
                   className="ml-auto rounded p-0.5 opacity-0 transition-opacity group-hover/img:opacity-100 hover:bg-[#f5f7fa]"
                 >
-                  <X className="h-3.5 w-3.5 text-[#98a2b3] hover:text-[#ef4444]" />
+                  <X className="h-4 w-4 text-[#98a2b3] hover:text-[#ef4444]" />
                 </button>
               )}
             </div>
@@ -174,9 +174,9 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
                 imageInputCount: (nodeData.imageInputCount ?? 1) + 1,
               })
             }
-            className="flex items-center gap-1 rounded-[10px] border border-dashed border-[#d0d5dd] px-3 py-2 text-[12px] text-[#667085] transition-colors hover:border-[#bfc7d4] hover:text-[#101828]"
+            className="flex items-center gap-1.5 rounded-xl border border-dashed border-[#d0d5dd] px-4 py-3 text-[15px] text-[#667085] transition-colors hover:border-[#bfc7d4] hover:text-[#101828]"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-4 w-4" />
             Add image input
           </button>
         </div>
@@ -185,17 +185,17 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
 
         <button
           onClick={() => setSettingsOpen(!settingsOpen)}
-          className="flex items-center gap-1 text-[12px] text-[#667085] transition-colors hover:text-[#101828]"
+          className="flex items-center gap-1.5 text-[15px] text-[#667085] transition-colors hover:text-[#101828]"
         >
           {settingsOpen ? (
-            <ChevronDown className="h-3.5 w-3.5" />
+            <ChevronDown className="h-4 w-4" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4" />
           )}
           Settings
         </button>
         {settingsOpen && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <FieldLabel>Temperature</FieldLabel>
               <TextInput
@@ -225,9 +225,9 @@ function GeminiNodeComponent({ id, data }: NodeProps) {
             className={outputHandleClass}
           />
           <SectionTitle>Response</SectionTitle>
-          <FieldBox className="mt-2 min-h-28 py-8 text-center text-[#98a2b3]">
+          <FieldBox className="mt-2.5 min-h-32 py-8 text-center text-[#98a2b3]">
             {(nodeOutput || nodeData.response) ? (
-              <p className="max-h-32 overflow-y-auto whitespace-pre-wrap text-left text-[12px] text-[#101828] nowheel">
+              <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-left text-[15px] text-[#101828] nowheel">
                 {(nodeOutput as string) || nodeData.response}
               </p>
             ) : (

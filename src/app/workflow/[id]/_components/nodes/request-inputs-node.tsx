@@ -56,9 +56,9 @@ function AddFieldDropdown({
       <button
         onClick={() => setOpen(!open)}
         title="Add field"
-        className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-[#e7eaf0] bg-[#f8fafc] text-[#667085] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#101828]"
+        className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] text-[#667085] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#101828]"
       >
-        <span className="text-lg leading-none">+</span>
+        <span className="text-xl leading-none">+</span>
       </button>
 
       {open && (
@@ -70,7 +70,7 @@ function AddFieldDropdown({
                 onAdd(opt.type);
                 setOpen(false);
               }}
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-[#344054] transition-colors hover:bg-[#f5f7fa]"
+              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[15px] text-[#344054] transition-colors hover:bg-[#f5f7fa]"
             >
               <opt.icon className={`h-4 w-4 ${opt.color}`} />
               {opt.label}
@@ -146,16 +146,16 @@ function ImageUploadField({
       <button
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="flex w-full nodrag items-center justify-center gap-1.5 rounded-[10px] border border-[#e4e7ec] bg-[#f8fafc] py-2 text-[12px] text-[#475467] transition-colors hover:border-[#d0d5dd] hover:text-[#101828] disabled:opacity-50"
+        className="flex w-full nodrag items-center justify-center gap-2 rounded-xl border border-[#e4e7ec] bg-[#f8fafc] py-3 text-[15px] text-[#475467] transition-colors hover:border-[#d0d5dd] hover:text-[#101828] disabled:opacity-50"
       >
         {uploading ? (
           <>
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             Uploading...
           </>
         ) : (
           <>
-            <Upload className="h-3 w-3" />
+            <Upload className="h-4 w-4" />
             Upload image
           </>
         )}
@@ -174,12 +174,12 @@ function ImageUploadField({
           <img
             src={field.value}
             alt="uploaded"
-            className="h-28 w-full object-cover"
+            className="h-36 w-full object-cover"
           />
         </div>
       )}
 
-      {error && <p className="mt-1 text-[11px] text-[#ef4444]">{error}</p>}
+      {error && <p className="mt-1 text-xs text-[#ef4444]">{error}</p>}
     </div>
   );
 }
@@ -222,12 +222,12 @@ function RequestInputsNodeComponent({ id, data }: NodeProps) {
     <NodeShell
       title="Request-Inputs"
       status={nodeStatus}
-      widthClass="min-w-[436px]"
+      widthClass="min-w-[520px]"
       actions={<AddFieldDropdown onAdd={addField} />}
     >
-      <div className="space-y-3">
+      <div className="space-y-4">
         {fields.length === 0 && (
-          <p className="py-4 text-center text-[12px] text-[#98a2b3]">
+          <p className="py-5 text-center text-[15px] text-[#98a2b3]">
             Click <span className="font-medium text-[#667085]">+</span> to add
             an input field
           </p>
@@ -235,24 +235,24 @@ function RequestInputsNodeComponent({ id, data }: NodeProps) {
 
         {fields.map((field) => (
           <div key={field.id} className="group relative">
-            <div className="mb-2 flex items-center gap-2">
-              <GripVertical className="h-3.5 w-3.5 text-[#98a2b3]" />
+            <div className="mb-2.5 flex items-center gap-2.5">
+              <GripVertical className="h-4 w-4 text-[#98a2b3]" />
               {field.type === "image_field" ? (
-                <ImageIcon className="h-3.5 w-3.5 text-[#ec4899]" />
+                <ImageIcon className="h-4 w-4 text-[#ec4899]" />
               ) : (
-                <Type className="h-3.5 w-3.5 text-[#ff9f0a]" />
+                <Type className="h-4 w-4 text-[#ff9f0a]" />
               )}
               <input
                 value={field.name}
                 onChange={(e) => updateFieldName(field.id, e.target.value)}
-                className="nodrag flex-1 border-none bg-transparent text-[13px] font-medium text-[#344054] outline-none"
+                className="nodrag flex-1 border-none bg-transparent text-base font-medium text-[#344054] outline-none"
               />
               <MiniInfoDot />
               <button
                 onClick={() => removeField(field.id)}
                 className="opacity-0 transition-opacity group-hover:opacity-100"
               >
-                <Trash2 className="h-3.5 w-3.5 text-[#98a2b3] hover:text-[#ef4444]" />
+                <Trash2 className="h-4 w-4 text-[#98a2b3] hover:text-[#ef4444]" />
               </button>
             </div>
             {field.type === "text_field" ? (
@@ -260,7 +260,7 @@ function RequestInputsNodeComponent({ id, data }: NodeProps) {
                 value={field.value || ""}
                 onChange={(value) => updateFieldValue(field.id, value)}
                 placeholder="Enter text..."
-                className="h-20 rounded-[12px] border-[#dde2e8] bg-[#f7f7f8] text-[13px]"
+                className="h-24 rounded-xl border-[#dde2e8] bg-[#f7f7f8]"
               />
             ) : (
               <ImageUploadField

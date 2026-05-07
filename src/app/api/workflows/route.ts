@@ -2,7 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { NODE_TYPES } from "@/lib/constants";
 import { SAMPLE_NODES, SAMPLE_EDGES } from "@/lib/sample-workflow";
+import type { WorkflowNode } from "@/types/workflow";
 
 export async function GET() {
   const { userId } = await auth();
@@ -37,21 +39,41 @@ export async function GET() {
   return NextResponse.json(result);
 }
 
-export async function POST() {
+const DEFAULT_NODES: WorkflowNode[] = [
+  {
+    id: "request-inputs-node",
+    type: NODE_TYPES.REQUEST_INPUTS,
+    position: { x: 100, y: 200 },
+    data: { fields: [] },
+    deletable: false,
+  },
+  {
+    id: "response-node",
+    type: NODE_TYPES.RESPONSE,
+    position: { x: 900, y: 200 },
+    data: {},
+    deletable: false,
+  },
+];
+
+export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const useSample = searchParams.get("sample") === "true";
+
   const count = await db.workflow.count({ where: { userId } });
-  const name = `Workflow ${count + 1}`;
+  const name = useSample ? `Sample Workflow ${count + 1}` : `Workflow ${count + 1}`;
 
   const workflow = await db.workflow.create({
     data: {
       userId,
       name,
-      nodes: SAMPLE_NODES as unknown as Prisma.InputJsonValue,
-      edges: SAMPLE_EDGES as unknown as Prisma.InputJsonValue,
+      nodes: (useSample ? SAMPLE_NODES : DEFAULT_NODES) as unknown as Prisma.InputJsonValue,
+      edges: (useSample ? SAMPLE_EDGES : []) as unknown as Prisma.InputJsonValue,
     },
   });
 

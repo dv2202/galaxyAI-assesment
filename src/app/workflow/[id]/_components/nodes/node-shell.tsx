@@ -20,13 +20,13 @@ type ExecutionStatus =
   | undefined;
 
 export const inputHandleClass =
-  "!h-[12px] !w-[12px] !-left-[6px] !border-[2px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1px_rgba(59,130,246,0.25)]";
+  "!h-[16px] !w-[16px] !-left-[8px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1.5px_rgba(59,130,246,0.25)]";
 
 export const imageInputHandleClass =
-  "!h-[12px] !w-[12px] !-left-[6px] !border-[2px] !border-white !bg-[#ec4899] !shadow-[0_0_0_1px_rgba(236,72,153,0.25)]";
+  "!h-[16px] !w-[16px] !-left-[8px] !border-[3px] !border-white !bg-[#ec4899] !shadow-[0_0_0_1.5px_rgba(236,72,153,0.25)]";
 
 export const outputHandleClass =
-  "!h-[12px] !w-[12px] !-right-[6px] !border-[2px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1px_rgba(59,130,246,0.25)]";
+  "!h-[16px] !w-[16px] !-right-[8px] !border-[3px] !border-white !bg-[#3b82f6] !shadow-[0_0_0_1.5px_rgba(59,130,246,0.25)]";
 
 export function getNodeStatusClass(status: ExecutionStatus) {
   if (status === "RUNNING") return "node-executing";
@@ -65,7 +65,7 @@ function HeaderIconButton({
     <button
       onClick={onClick}
       title={title}
-      className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#e7eaf0] bg-[#f8fafc] text-[#98a2b3] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#475467]"
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] text-[#98a2b3] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#475467]"
     >
       {children}
     </button>
@@ -80,7 +80,7 @@ export function NodeShell({
   isExecuting,
   children,
   actions,
-  widthClass = "min-w-[260px]",
+  widthClass = "min-w-[380px]",
 }: {
   title: string;
   status: ExecutionStatus;
@@ -93,23 +93,23 @@ export function NodeShell({
 }) {
   return (
     <div
-      className={`${widthClass} relative rounded-[18px] border border-[#edf0f5] bg-white shadow-[0_14px_32px_rgba(16,24,40,0.08)] ${getNodeStatusClass(status)}`}
+      className={`${widthClass} relative rounded-[20px] border border-[#edf0f5] bg-white shadow-[0_14px_32px_rgba(16,24,40,0.08)] ${getNodeStatusClass(status)}`}
     >
-      <div className="flex items-center gap-2 rounded-t-[18px] border-b border-[#edf0f5] bg-white px-4 py-3">
-        <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#101828]">
+      <div className="flex items-center gap-3 rounded-t-[20px] border-b border-[#edf0f5] bg-white px-6 py-4">
+        <p className="min-w-0 flex-1 truncate text-base font-semibold text-[#101828]">
           {title}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {actions}
           <HeaderIconButton title="Node info">
-            <Info className="h-3.5 w-3.5" />
+            <Info className="h-4 w-4" />
           </HeaderIconButton>
           
           {onRun ? (
             <button
               onClick={onRun}
               disabled={isExecuting}
-              className={`flex h-7 items-center gap-1.5 rounded-[9px] border px-2.5 text-[11px] font-medium transition disabled:opacity-40 ${
+              className={`flex h-9 items-center gap-2 rounded-xl border px-3.5 text-sm font-medium transition disabled:opacity-40 ${
                 status === "COMPLETED"
                   ? "border-[#9cddb0] bg-[#dff7e5] text-[#16a34a]"
                   : status === "FAILED"
@@ -123,15 +123,15 @@ export function NodeShell({
               title="Run this node"
             >
               {status === "RUNNING" ? (
-                <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : status === "PENDING" ? (
-                <Clock className="h-3.5 w-3.5" />
+                <Clock className="h-4 w-4" />
               ) : status === "COMPLETED" ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
+                <CheckCircle2 className="h-4 w-4" />
               ) : status === "FAILED" ? (
-                <XCircle className="h-3.5 w-3.5" />
+                <XCircle className="h-4 w-4" />
               ) : (
-                <Play className="h-3.5 w-3.5 fill-current" />
+                <Play className="h-4 w-4 fill-current" />
               )}
               {status === "RUNNING"
                 ? "Running..."
@@ -146,22 +146,12 @@ export function NodeShell({
           ) : null}
           {onDelete ? (
             <HeaderIconButton onClick={onDelete} title="Delete node">
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </HeaderIconButton>
           ) : null}
-          {/* {statusLabel ? (
-            <div className="flex items-center gap-1 rounded-full bg-[#f7f8fa] px-2 py-1">
-              {status === "RUNNING" || status === "PENDING" ? (
-                <LoaderCircle className="h-3 w-3 animate-spin text-[#f59e0b]" />
-              ) : (
-                <span className={`h-1.5 w-1.5 rounded-full ${statusTone}`} />
-              )}
-              <span className="text-[10px] text-[#667085]">{statusLabel}</span>
-            </div>
-          ) : null} */}
         </div>
       </div>
-      <div className="space-y-3 rounded-[20px] bg-white p-4">{children}</div>
+      <div className="space-y-4 rounded-b-[20px] bg-white p-6">{children}</div>
     </div>
   );
 }
@@ -177,7 +167,7 @@ export function HeaderAddButton({
     <button
       onClick={onClick}
       title={title}
-      className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-[#e7eaf0] bg-[#f8fafc] text-[#667085] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#101828]"
+      className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#e7eaf0] bg-[#f8fafc] text-[#667085] transition hover:border-[#d7dde7] hover:bg-white hover:text-[#101828]"
     >
       <span className="text-lg leading-none">+</span>
     </button>
@@ -205,7 +195,7 @@ export function SegmentedTabs({
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            className={`flex-1 rounded-[14px] px-3 py-1.5 text-[12px] font-medium transition ${
+            className={`flex-1 rounded-[14px] px-4 py-2.5 text-[15px] font-medium transition ${
               isActive
                 ? "bg-[#182230] text-white shadow-[0_4px_10px_rgba(16,24,40,0.12)]"
                 : "text-[#667085] hover:text-[#344054]"
@@ -232,7 +222,7 @@ export function InlineSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="nodrag h-9 w-full rounded-[10px] border border-[#e4e7ec] bg-[#f8fafc] px-3 text-[11px] text-[#101828] outline-none transition focus:border-[#cdd5df]"
+      className="nodrag h-11 w-full rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 text-[15px] text-[#101828] outline-none transition focus:border-[#cdd5df]"
     >
       {children}
     </select>
@@ -258,7 +248,7 @@ export function TextareaInput({
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       placeholder={placeholder}
-      className={`nodrag nowheel w-full resize-none rounded-[10px] border border-[#e4e7ec] bg-[#f8fafc] px-3 py-2.5 text-[11px] text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`nodrag nowheel w-full resize-none rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 py-3 text-[15px] text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     />
   );
 }
@@ -279,7 +269,7 @@ export function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`nodrag h-9 w-full rounded-[10px] border border-[#e4e7ec] bg-[#f8fafc] px-3 text-[11px] text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] ${className}`}
+      className={`nodrag h-11 w-full rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 text-[15px] text-[#101828] outline-none transition placeholder:text-[#98a2b3] focus:border-[#cdd5df] ${className}`}
     />
   );
 }
@@ -294,8 +284,8 @@ export function KeyValueRow({
   after?: ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_minmax(0,1.6fr)_36px] items-center gap-2.5">
-      <div className="text-[11px] text-[#475467]">{label}</div>
+    <div className="grid grid-cols-[1fr_minmax(0,1.6fr)_40px] items-center gap-3">
+      <div className="text-[15px] text-[#475467]">{label}</div>
       <div>{children}</div>
       <div className="flex justify-end">{after}</div>
     </div>
@@ -304,7 +294,7 @@ export function KeyValueRow({
 
 export function SideAddButton() {
   return (
-    <button className="flex h-7 w-7 items-center justify-center rounded-[9px] border border-[#e4e7ec] bg-[#f8fafc] text-[18px] leading-none text-[#98a2b3] transition hover:bg-white hover:text-[#667085]">
+    <button className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#e4e7ec] bg-[#f8fafc] text-lg leading-none text-[#98a2b3] transition hover:bg-white hover:text-[#667085]">
       <span>+</span>
     </button>
   );
@@ -312,7 +302,7 @@ export function SideAddButton() {
 
 export function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[11px] font-medium text-[#344054]">{children}</p>
+    <p className="text-[15px] font-medium text-[#344054]">{children}</p>
   );
 }
 
@@ -325,14 +315,14 @@ export function StatusPill({
 }) {
   return (
     <div
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium ${
         tone === "connected"
           ? "bg-[#eefaf2] text-[#16a34a]"
           : "bg-[#f5f7fa] text-[#667085]"
       }`}
     >
       {tone === "connected" ? (
-        <span className="h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+        <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
       ) : null}
       {children}
     </div>
@@ -349,7 +339,7 @@ export function GhostActionButton({
   return (
     <button
       onClick={onClick}
-      className="rounded-[8px] p-1 text-[#98a2b3] transition hover:bg-[#f5f7fa] hover:text-[#667085]"
+      className="rounded-lg p-1.5 text-[#98a2b3] transition hover:bg-[#f5f7fa] hover:text-[#667085]"
     >
       {children}
     </button>
@@ -366,7 +356,7 @@ export function FieldLabel({
   info?: ReactNode;
 }) {
   return (
-    <div className="mb-1.5 flex items-center gap-1.5 text-[11px] text-[#475467]">
+    <div className="mb-2 flex items-center gap-1.5 text-[15px] text-[#475467]">
       <label className="font-medium">
         {children}
         {required ? <span className="text-[#ef4444]">*</span> : null}
@@ -385,7 +375,7 @@ export function FieldBox({
 }) {
   return (
     <div
-      className={`rounded-[10px] border border-[#e4e7ec] bg-[#f8fafc] px-3 py-2 text-[11px] text-[#101828] ${className}`}
+      className={`rounded-xl border border-[#e4e7ec] bg-[#f8fafc] px-4 py-3 text-[15px] text-[#101828] ${className}`}
     >
       {children}
     </div>
@@ -394,7 +384,7 @@ export function FieldBox({
 
 export function MiniInfoDot() {
   return (
-    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#d0d5dd] text-[10px] text-[#98a2b3]">
+    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#d0d5dd] text-xs text-[#98a2b3]">
       i
     </span>
   );

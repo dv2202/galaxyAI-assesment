@@ -52,7 +52,7 @@ export const SAMPLE_NODES: WorkflowNode[] = [
     type: NODE_TYPES.GEMINI,
     position: { x: 580, y: 680 },
     data: {
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       prompt: "",
       systemPrompt:
         "You are a marketing copywriter. Write a one-paragraph product description.",
@@ -63,7 +63,7 @@ export const SAMPLE_NODES: WorkflowNode[] = [
     type: NODE_TYPES.GEMINI,
     position: { x: 1080, y: 680 },
     data: {
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       prompt: "",
       systemPrompt:
         "Condense the following product description into a tweet-length hook (under 240 characters).",
@@ -74,7 +74,7 @@ export const SAMPLE_NODES: WorkflowNode[] = [
     type: NODE_TYPES.GEMINI,
     position: { x: 1400, y: 240 },
     data: {
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       prompt: "",
       systemPrompt:
         "You are a social media manager. Combine the tweet hook and the two product crops into a final marketing post.",
