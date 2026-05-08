@@ -3,6 +3,7 @@ export const NODE_TYPES = {
   CROP_IMAGE: "crop-image",
   GEMINI: "gemini",
   RESPONSE: "response",
+  STICKY_NOTE: "sticky-note",
 } as const;
 
 export const HANDLE_TYPES = {

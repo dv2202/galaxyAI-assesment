@@ -11,16 +11,27 @@ export function useWorkflowExecute() {
   const markClean = useWorkflowStore((s) => s.markClean);
   const startExecution = useExecutionStore((s) => s.startExecution);
   const updateNodeStatus = useExecutionStore((s) => s.updateNodeStatus);
+  const finishExecutionStore = useExecutionStore((s) => s.finishExecution);
   const cancelExecutionStore = useExecutionStore((s) => s.cancelExecution);
   const currentRunId = useExecutionStore((s) => s.currentRunId);
   const isExecuting = useExecutionStore((s) => s.isExecuting);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollStartRef = useRef<number>(0);
+
+  const MAX_POLL_MS = 5 * 60 * 1000;
 
   const pollRunStatus = useCallback(
     (runId: string) => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      pollStartRef.current = Date.now();
 
       const poll = async () => {
+        if (Date.now() - pollStartRef.current > MAX_POLL_MS) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          finishExecutionStore();
+          return;
+        }
+
         try {
           const res = await fetch(`/api/runs/${runId}`);
           if (!res.ok) return;
@@ -30,16 +41,18 @@ export function useWorkflowExecute() {
           }
           if (["COMPLETED", "FAILED", "PARTIAL"].includes(run.status)) {
             if (intervalRef.current) clearInterval(intervalRef.current);
+            finishExecutionStore();
           }
         } catch {
           if (intervalRef.current) clearInterval(intervalRef.current);
+          finishExecutionStore();
         }
       };
 
       poll();
       intervalRef.current = setInterval(poll, 1000);
     },
-    [updateNodeStatus]
+    [updateNodeStatus, finishExecutionStore]
   );
 
   const execute = useCallback(

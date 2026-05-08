@@ -62,32 +62,24 @@ summary {
 }
 
 .node-pending {
-  animation: pending-pulse 2s ease-in-out infinite;
-  border-color: rgba(139, 92, 246, 0.28) !important;
-}
-
-@keyframes pending-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 4px 1px rgba(139, 92, 246, 0.15);
-  }
-  50% {
-    box-shadow: 0 0 8px 3px rgba(139, 92, 246, 0.3);
-  }
+  border-color: rgba(139, 92, 246, 0.18) !important;
+  box-shadow: 0 0 4px 1px rgba(139, 92, 246, 0.08);
 }
 
 .node-executing {
-  animation: pulse-glow 1.2s ease-in-out infinite;
-  border-color: rgba(139, 92, 246, 0.6) !important;
+  animation: exec-glow 1.4s ease-in-out infinite;
+  border-color: rgba(139, 92, 246, 0.7) !important;
 }
 
-@keyframes pulse-glow {
+@keyframes exec-glow {
   0%,
   100% {
-    box-shadow: 0 0 8px 3px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 0 12px 4px rgba(139, 92, 246, 0.25),
+      0 0 2px 1px rgba(139, 92, 246, 0.4);
   }
   50% {
-    box-shadow: 0 0 25px 10px rgba(139, 92, 246, 0.35);
+    box-shadow: 0 0 32px 14px rgba(139, 92, 246, 0.45),
+      0 0 4px 2px rgba(139, 92, 246, 0.6);
   }
 }
 

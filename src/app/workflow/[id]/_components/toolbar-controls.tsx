@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -8,8 +9,13 @@ import {
   Square,
   Calculator,
   WalletCards,
+  MousePointer2,
+  Download,
+  Upload,
 } from "lucide-react";
 import { useWorkflowExecute } from "@/hooks/use-workflow-execute";
+import { useWorkflowStore } from "@/stores/workflow-store";
+import { NON_DELETABLE_NODES } from "@/lib/constants";
 
 interface ToolbarControlsProps {
   workflowName: string;
@@ -21,6 +27,50 @@ interface ToolbarControlsProps {
 export function ToolbarControls(props: ToolbarControlsProps) {
   const router = useRouter();
   const { execute, cancelExecution, isExecuting } = useWorkflowExecute();
+  const nodes = useWorkflowStore((s) => s.nodes);
+  const edges = useWorkflowStore((s) => s.edges);
+  const setNodes = useWorkflowStore((s) => s.setNodes);
+  const setEdges = useWorkflowStore((s) => s.setEdges);
+  const selectedNodes = nodes.filter(
+    (n) => n.selected && !NON_DELETABLE_NODES.includes(n.type as string)
+  );
+  const hasSelection = selectedNodes.length > 0;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = useCallback(() => {
+    const data = JSON.stringify({ nodes, edges }, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${props.workflowName.replace(/\s+/g, "_")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [nodes, edges, props.workflowName]);
+
+  const handleImport = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const json = JSON.parse(event.target?.result as string);
+          if (Array.isArray(json.nodes) && Array.isArray(json.edges)) {
+            setNodes(json.nodes);
+            setEdges(json.edges);
+          } else {
+            alert("Invalid workflow JSON: missing nodes or edges array");
+          }
+        } catch {
+          alert("Failed to parse JSON file");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    },
+    [setNodes, setEdges]
+  );
 
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-4 px-5 py-3">
@@ -51,6 +101,29 @@ export function ToolbarControls(props: ToolbarControlsProps) {
             <span className="text-xs text-[#4b5563]">0.00 M</span>
           </div>
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleImport}
+          className="hidden"
+        />
+        <button
+          onClick={handleExport}
+          title="Export workflow JSON"
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-2.5 text-xs font-medium text-[#4b5563] shadow-sm transition hover:bg-[#fafafa]"
+        >
+          <Download className="h-3 w-3" />
+          Export
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          title="Import workflow JSON"
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-2.5 text-xs font-medium text-[#4b5563] shadow-sm transition hover:bg-[#fafafa]"
+        >
+          <Upload className="h-3 w-3" />
+          Import
+        </button>
         {isExecuting ? (
           <button
             onClick={cancelExecution}
@@ -60,13 +133,29 @@ export function ToolbarControls(props: ToolbarControlsProps) {
             Stop
           </button>
         ) : (
-          <button
-            onClick={() => execute("FULL")}
-            className="flex h-8 items-center gap-1.5 rounded-lg border border-[#b7efc4] bg-[#dcfce7] px-3 text-xs font-semibold text-[#1ea44b] shadow-sm transition hover:bg-[#d2f8dd]"
-          >
-            <Play className="h-3 w-3 fill-current" />
-            Run
-          </button>
+          <>
+            {hasSelection && (
+              <button
+                onClick={() =>
+                  execute(
+                    "PARTIAL",
+                    selectedNodes.map((n) => n.id)
+                  )
+                }
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-[#c7c3ff] bg-[#efecff] px-3 text-xs font-semibold text-[#6258e5] shadow-sm transition hover:bg-[#e5e1ff]"
+              >
+                <MousePointer2 className="h-3 w-3" />
+                Run Selected ({selectedNodes.length})
+              </button>
+            )}
+            <button
+              onClick={() => execute("FULL")}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#b7efc4] bg-[#dcfce7] px-3 text-xs font-semibold text-[#1ea44b] shadow-sm transition hover:bg-[#d2f8dd]"
+            >
+              <Play className="h-3 w-3 fill-current" />
+              Run
+            </button>
+          </>
         )}
         <button
           type="button"

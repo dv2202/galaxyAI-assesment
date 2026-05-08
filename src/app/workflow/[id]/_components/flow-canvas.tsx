@@ -5,6 +5,7 @@ import {
   ReactFlow,
   Background,
   BackgroundVariant,
+  MiniMap,
   type IsValidConnection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -15,12 +16,14 @@ import { RequestInputsNode } from "./nodes/request-inputs-node";
 import { CropImageNode } from "./nodes/crop-image-node";
 import { GeminiNode } from "./nodes/gemini-node";
 import { ResponseNode } from "./nodes/response-node";
+import { StickyNoteNode } from "./nodes/sticky-note-node";
 
 const nodeTypes = {
   "request-inputs": RequestInputsNode,
   "crop-image": CropImageNode,
   gemini: GeminiNode,
   response: ResponseNode,
+  "sticky-note": StickyNoteNode,
 };
 
 function parseHandleType(handleId: string | null | undefined): string | null {
@@ -71,12 +74,22 @@ export function FlowCanvas() {
         style: { stroke: "#f6a31a", strokeWidth: 2.2 },
       }}
       connectionLineStyle={{ stroke: "#f6a31a", strokeWidth: 2.2 }}
+      proOptions={{ hideAttribution: true }}
     >
       <Background
         variant={BackgroundVariant.Dots}
         gap={19}
         size={1.15}
-        color="#d6d9de"
+        color="#b0b5be"
+      />
+      <MiniMap
+        nodeColor="#8b5cf6"
+        nodeStrokeColor="#6d28d9"
+        nodeStrokeWidth={2}
+        nodeBorderRadius={8}
+        pannable
+        zoomable
+        style={{ width: 170, height: 120 }}
       />
     </ReactFlow>
   );

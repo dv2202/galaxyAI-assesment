@@ -10,6 +10,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { FlowCanvas } from "./flow-canvas";
 import { ToolbarControls } from "./toolbar-controls";
 import { CanvasToolbar } from "./canvas-toolbar";
+import { CenterToolbar } from "./center-toolbar";
 import { HistoryPanel } from "./history-panel";
 
 interface CanvasShellProps {
@@ -49,6 +50,7 @@ export function CanvasShell({
               />
               <FlowCanvas />
               <CanvasToolbar />
+              <CenterToolbar />
             </div>
             <div
               className={`relative shrink-0 overflow-hidden border-l border-[#e7e8ec] bg-white transition-[width] duration-300 ${

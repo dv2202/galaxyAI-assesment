@@ -13,6 +13,7 @@ interface ExecutionState {
     status: NodeExecutionStatus,
     output?: unknown
   ) => void;
+  finishExecution: () => void;
   cancelExecution: () => void;
   clearExecution: () => void;
 }
@@ -52,6 +53,16 @@ export const useExecutionStore = create<ExecutionState>((set, get) => ({
       nodeOutputs: newOutputs,
       isExecuting: !allDone,
     });
+  },
+
+  finishExecution: () => {
+    const { nodeStatuses } = get();
+    const updated: Record<string, NodeExecutionStatus> = {};
+    for (const [id, status] of Object.entries(nodeStatuses)) {
+      updated[id] =
+        status === "PENDING" || status === "RUNNING" ? "SKIPPED" : status;
+    }
+    set({ nodeStatuses: updated, isExecuting: false });
   },
 
   cancelExecution: () => {

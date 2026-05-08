@@ -53,3 +53,5 @@ prisma/*.db
 
 # project notes
 FUTURE_SCOPE.md
+DEPLOYMENT_PLAN.md
+PROJECT_DEEP_DIVE.md
