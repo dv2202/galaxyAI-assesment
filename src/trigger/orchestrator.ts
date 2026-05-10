@@ -20,146 +20,156 @@ export const workflowOrchestrator = task({
     const { runId, nodes, edges, inputs, selectedNodeIds } = payload;
     const startTime = Date.now();
 
-    const nodeOutputs: Record<string, unknown> = {};
-    const completedNodes = new Set<string>();
+    try {
+      const nodeOutputs: Record<string, unknown> = {};
+      const completedNodes = new Set<string>();
 
-    // Seed Request-Inputs outputs
-    const requestInputsNode = nodes.find(
-      (n) => n.type === NODE_TYPES.REQUEST_INPUTS
-    );
-    if (requestInputsNode) {
-      completedNodes.add(requestInputsNode.id);
-      const fields = (requestInputsNode.data as { fields: { id: string; value?: string }[] }).fields || [];
-      for (const field of fields) {
-        nodeOutputs[`${requestInputsNode.id}:${field.id}`] = field.value || "";
-      }
-    }
-
-    // Determine which nodes to execute
-    const executableNodes = nodes.filter((n) => {
-      if (n.type === NODE_TYPES.REQUEST_INPUTS || n.type === NODE_TYPES.RESPONSE) return false;
-      if (selectedNodeIds) return selectedNodeIds.includes(n.id);
-      return true;
-    });
-
-    const executableIds = new Set(executableNodes.map((n) => n.id));
-    let hasError = false;
-
-    while (true) {
-      const readyNodes = findReadyNodes(
-        executableNodes,
-        edges,
-        completedNodes,
-        executableIds
+      const requestInputsNode = nodes.find(
+        (n) => n.type === NODE_TYPES.REQUEST_INPUTS
       );
-
-      if (readyNodes.length === 0) break;
-
-      await Promise.all(
-        readyNodes.map((nodeId) =>
-          db.workflowNodeResult.update({
-            where: { runId_nodeId: { runId, nodeId } },
-            data: { status: "RUNNING", startedAt: new Date() },
-          })
-        )
-      );
-
-      const batchStartTime = Date.now();
-
-      const batchItems: Array<{ task: typeof cropImageTask | typeof geminiGenerateTask; payload: Record<string, unknown> }> = [];
-      const batchNodeIds: string[] = [];
-
-      for (const nodeId of readyNodes) {
-        const node = nodes.find((n) => n.id === nodeId);
-        if (!node) continue;
-        const inputValues = gatherInputs(nodeId, nodes, edges, nodeOutputs);
-
-        if (node.type === NODE_TYPES.CROP_IMAGE) {
-          batchItems.push({
-            task: cropImageTask,
-            payload: {
-              imageUrl: inputValues.inputImage as string,
-              xPosition: (node.data as { xPosition?: number }).xPosition ?? 0,
-              yPosition: (node.data as { yPosition?: number }).yPosition ?? 0,
-              width: (node.data as { width?: number }).width ?? 100,
-              height: (node.data as { height?: number }).height ?? 100,
-            },
-          });
-          batchNodeIds.push(nodeId);
-        } else if (node.type === NODE_TYPES.GEMINI) {
-          const nodeData = node.data as { prompt?: string; systemPrompt?: string; model?: string };
-          batchItems.push({
-            task: geminiGenerateTask,
-            payload: {
-              prompt: (inputValues.prompt as string) || nodeData.prompt || "",
-              systemPrompt: (inputValues.systemPrompt as string) || nodeData.systemPrompt || "",
-              model: nodeData.model || "gemini-2.5-flash",
-              imageUrls: (inputValues.images as string[]) || [],
-            },
-          });
-          batchNodeIds.push(nodeId);
+      if (requestInputsNode) {
+        completedNodes.add(requestInputsNode.id);
+        const fields = (requestInputsNode.data as { fields: { id: string; value?: string }[] }).fields || [];
+        for (const field of fields) {
+          nodeOutputs[`${requestInputsNode.id}:${field.id}`] = field.value || "";
         }
       }
 
-      if (batchItems.length === 0) break;
+      const executableNodes = nodes.filter((n) => {
+        if (n.type === NODE_TYPES.REQUEST_INPUTS || n.type === NODE_TYPES.RESPONSE) return false;
+        if (selectedNodeIds) return selectedNodeIds.includes(n.id);
+        return true;
+      });
 
-      const batchResult = await batch.triggerByTaskAndWait(batchItems as any);
+      const executableIds = new Set(executableNodes.map((n) => n.id));
+      let hasError = false;
 
-      for (let i = 0; i < batchNodeIds.length; i++) {
-        const nodeId = batchNodeIds[i];
-        const result = batchResult.runs[i];
-        const duration = Date.now() - batchStartTime;
+      while (true) {
+        const readyNodes = findReadyNodes(
+          executableNodes,
+          edges,
+          completedNodes,
+          executableIds
+        );
 
-        if (result.ok) {
-          nodeOutputs[nodeId] = result.output;
-          completedNodes.add(nodeId);
-          await db.workflowNodeResult.update({
-            where: { runId_nodeId: { runId, nodeId } },
-            data: { status: "COMPLETED", output: result.output as unknown as object, completedAt: new Date(), duration },
-          });
-        } else {
-          completedNodes.add(nodeId);
-          hasError = true;
-          const errorMessage = extractErrorMessage(result.error);
-          await db.workflowNodeResult.update({
-            where: { runId_nodeId: { runId, nodeId } },
-            data: { status: "FAILED", error: errorMessage, completedAt: new Date(), duration },
-          });
+        if (readyNodes.length === 0) break;
+
+        await Promise.all(
+          readyNodes.map((nodeId) =>
+            db.workflowNodeResult.update({
+              where: { runId_nodeId: { runId, nodeId } },
+              data: { status: "RUNNING", startedAt: new Date() },
+            })
+          )
+        );
+
+        const batchStartTime = Date.now();
+
+        const batchItems: Array<{ task: typeof cropImageTask | typeof geminiGenerateTask; payload: Record<string, unknown> }> = [];
+        const batchNodeIds: string[] = [];
+
+        for (const nodeId of readyNodes) {
+          const node = nodes.find((n) => n.id === nodeId);
+          if (!node) continue;
+          const inputValues = gatherInputs(nodeId, nodes, edges, nodeOutputs);
+
+          if (node.type === NODE_TYPES.CROP_IMAGE) {
+            batchItems.push({
+              task: cropImageTask,
+              payload: {
+                imageUrl: inputValues.inputImage as string,
+                xPosition: (node.data as { xPosition?: number }).xPosition ?? 0,
+                yPosition: (node.data as { yPosition?: number }).yPosition ?? 0,
+                width: (node.data as { width?: number }).width ?? 100,
+                height: (node.data as { height?: number }).height ?? 100,
+              },
+            });
+            batchNodeIds.push(nodeId);
+          } else if (node.type === NODE_TYPES.GEMINI) {
+            const nodeData = node.data as { prompt?: string; systemPrompt?: string; model?: string };
+            batchItems.push({
+              task: geminiGenerateTask,
+              payload: {
+                prompt: (inputValues.prompt as string) || nodeData.prompt || "",
+                systemPrompt: (inputValues.systemPrompt as string) || nodeData.systemPrompt || "",
+                model: nodeData.model || "gemini-2.5-flash",
+                imageUrls: (inputValues.images as string[]) || [],
+              },
+            });
+            batchNodeIds.push(nodeId);
+          }
+        }
+
+        if (batchItems.length === 0) break;
+
+        const batchResult = await batch.triggerByTaskAndWait(batchItems as any);
+
+        for (let i = 0; i < batchNodeIds.length; i++) {
+          const nodeId = batchNodeIds[i];
+          const result = batchResult.runs[i];
+          const duration = Date.now() - batchStartTime;
+
+          if (result.ok) {
+            nodeOutputs[nodeId] = result.output;
+            completedNodes.add(nodeId);
+            await db.workflowNodeResult.update({
+              where: { runId_nodeId: { runId, nodeId } },
+              data: { status: "COMPLETED", output: result.output as unknown as object, completedAt: new Date(), duration },
+            });
+          } else {
+            completedNodes.add(nodeId);
+            hasError = true;
+            const errorMessage = extractErrorMessage(result.error);
+            await db.workflowNodeResult.update({
+              where: { runId_nodeId: { runId, nodeId } },
+              data: { status: "FAILED", error: errorMessage, completedAt: new Date(), duration },
+            });
+          }
         }
       }
-    }
 
-    // Handle Response node
-    const responseNode = nodes.find((n) => n.type === NODE_TYPES.RESPONSE);
-    if (responseNode) {
-      const incomingEdge = edges.find((e) => e.target === responseNode.id);
-      if (incomingEdge) {
-        const sourceOutput = nodeOutputs[incomingEdge.source];
-        nodeOutputs[responseNode.id] = sourceOutput;
+      const responseNode = nodes.find((n) => n.type === NODE_TYPES.RESPONSE);
+      if (responseNode) {
+        const incomingEdge = edges.find((e) => e.target === responseNode.id);
+        if (incomingEdge) {
+          const sourceOutput = nodeOutputs[incomingEdge.source];
+          nodeOutputs[responseNode.id] = sourceOutput;
+        }
+        await db.workflowNodeResult.update({
+          where: { runId_nodeId: { runId, nodeId: responseNode.id } },
+          data: {
+            status: "COMPLETED",
+            output: nodeOutputs[responseNode.id] as object ?? null,
+            completedAt: new Date(),
+          },
+        }).catch(() => {});
       }
-      await db.workflowNodeResult.update({
-        where: { runId_nodeId: { runId, nodeId: responseNode.id } },
+
+      const duration = Date.now() - startTime;
+      const finalStatus = hasError ? "PARTIAL" : "COMPLETED";
+
+      await db.workflowRun.update({
+        where: { id: runId },
         data: {
-          status: "COMPLETED",
-          output: nodeOutputs[responseNode.id] as object ?? null,
+          status: finalStatus,
           completedAt: new Date(),
+          duration,
+        },
+      });
+
+      return { status: finalStatus, nodeOutputs, duration };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      await db.workflowRun.update({
+        where: { id: runId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          duration,
         },
       }).catch(() => {});
+      throw error;
     }
-
-    const duration = Date.now() - startTime;
-    const finalStatus = hasError ? "PARTIAL" : "COMPLETED";
-
-    await db.workflowRun.update({
-      where: { id: runId },
-      data: {
-        status: finalStatus,
-        completedAt: new Date(),
-        duration,
-      },
-    });
-
-    return { status: finalStatus, nodeOutputs, duration };
   },
 });
 

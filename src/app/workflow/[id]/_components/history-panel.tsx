@@ -70,7 +70,7 @@ export function HistoryPanel({
 
   useEffect(() => {
     void fetchRuns();
-    const interval = setInterval(fetchRuns, isExecuting ? 1500 : 5000);
+    const interval = setInterval(fetchRuns, isExecuting ? 1000 : 5000);
     return () => clearInterval(interval);
   }, [fetchRuns, isExecuting]);
 
